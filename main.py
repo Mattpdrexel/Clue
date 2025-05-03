@@ -1,4 +1,4 @@
-from Game.game import initialize_game
+from Game.GameSetup import initialize_game
 
 game = initialize_game()
 print()

@@ -1,7 +1,9 @@
+# Player/Player.py
 from Objects.Board import MansionBoard
 from Objects.Character import character_dict
 from Data.Constants import CHARACTERS, WEAPONS, SUSPECT_ROOMS
 from Actions.Movement import get_available_moves as movement_get_available_moves
+import Actions.Suggestions as suggestion_actions
 import random
 
 
@@ -88,35 +90,6 @@ class Player:
         if self.character:
             self.character.move_to(new_position)
 
-
-    def can_make_suggestion(self, room):
-        """
-        Check if the player can make a suggestion about a specific room.
-
-        Args:
-            room (str): The room to make a suggestion about
-
-        Returns:
-            bool: True if player can make a suggestion, False otherwise
-        """
-        current_location = self.character.position
-
-        # If we're in a room (string position)
-        if isinstance(current_location, str):
-            return current_location == room
-
-        # If we're at a position (might be in room entrance)
-        return False
-
-    def can_make_accusation(self):
-        """
-        Check if the player can make an accusation.
-
-        Returns:
-            bool: True if player can make an accusation, False otherwise
-        """
-        return self.character.position == "Clue"
-
     def make_suggestion(self, room, suspect, weapon):
         """
         Make a suggestion about the crime.
@@ -127,37 +100,9 @@ class Player:
             weapon (str): The suspected weapon
 
         Returns:
-            tuple or None: (room, suspect, weapon) if successful, None if invalid
-
-        Raises:
-            ValueError: If player is not in the room where they're making the suggestion
+            tuple: (room, suspect, weapon)
         """
-        # Check if player is in the room they're suggesting
-        current_location = self.character.position
-
-        # For string position (room name)
-        if isinstance(current_location, str) and current_location != room:
-            raise ValueError(
-                f"You must be in the {room} to make a suggestion about it. Currently in {current_location}.")
-
-        # For tuple position (could be in a hallway or room entrance)
-        elif isinstance(current_location, tuple):
-            # Get room name at current position (if any)
-            # This requires access to the board, which we don't have in this method.
-            # We might need to restructure to pass the board in, or store a reference.
-            # For now, we'll just make it an explicit validation requirement elsewhere.
-            raise ValueError("You must be in a room to make a suggestion.")
-
-        # Record this suggestion in history
-        self.suggestion_history.append({
-            "room": room,
-            "suspect": suspect,
-            "weapon": weapon,
-            "disproven_by": None,  # Will be filled in later
-            "disproven_with": None  # Will be filled in if revealed to this player
-        })
-
-        return (room, suspect, weapon)
+        return suggestion_actions.make_suggestion(self, room, suspect, weapon)
 
     def make_accusation(self, room, suspect, weapon):
         """
@@ -169,18 +114,9 @@ class Player:
             weapon (str): The weapon used
 
         Returns:
-            tuple or None: (room, suspect, weapon) if successful, None if invalid
-
-        Raises:
-            ValueError: If player is not in the Clue room
+            tuple: (room, suspect, weapon)
         """
-        # Check if player is in the Clue room
-        current_location = self.character.position
-
-        if current_location != "Clue":
-            raise ValueError("You must be in the Clue room to make an accusation.")
-
-        return (room, suspect, weapon)
+        return suggestion_actions.make_accusation(room, suspect, weapon)
 
     def update_knowledge_from_suggestion(self, suggesting_player, suggestion, responding_player, revealed_card=None):
         """
@@ -192,25 +128,9 @@ class Player:
             responding_player (int): Player ID who responded (or None)
             revealed_card (tuple, optional): Card that was revealed to suggesting_player
         """
-        room, suspect, weapon = suggestion
-
-        # Update suggestion history if this was our suggestion
-        if suggesting_player == self.player_id and self.suggestion_history:
-            self.suggestion_history[-1]["disproven_by"] = responding_player
-            self.suggestion_history[-1]["disproven_with"] = revealed_card
-
-        # If player couldn't disprove, they don't have any of these cards
-        if responding_player is not None and responding_player != self.player_id and revealed_card is None:
-            if responding_player not in self.player_knowledge:
-                self.player_knowledge[responding_player] = {"not_cards": set()}
-
-            self.player_knowledge[responding_player]["not_cards"].add(("suspect", suspect))
-            self.player_knowledge[responding_player]["not_cards"].add(("weapon", weapon))
-            self.player_knowledge[responding_player]["not_cards"].add(("room", room))
-
-        # If we were shown a card, update knowledge
-        if suggesting_player == self.player_id and revealed_card:
-            self._update_knowledge_from_card(revealed_card)
+        suggestion_actions.update_knowledge_from_suggestion(
+            self, suggesting_player, suggestion, responding_player, revealed_card
+        )
 
     def respond_to_suggestion(self, suggestion):
         """
@@ -222,23 +142,7 @@ class Player:
         Returns:
             tuple or None: The card being shown, or None if can't disprove
         """
-        room, suspect, weapon = suggestion
-
-        # Check if player has any of the suggested cards
-        matching_cards = []
-        for card in self.hand:
-            card_type, card_name = card
-            if (card_type == "room" and card_name == room) or \
-                    (card_type == "suspect" and card_name == suspect) or \
-                    (card_type == "weapon" and card_name == weapon):
-                matching_cards.append(card)
-
-        if not matching_cards:
-            return None
-
-        # For base player, just return first matching card
-        # More sophisticated players might choose strategically
-        return matching_cards[0]
+        return suggestion_actions.respond_to_suggestion(self, suggestion)
 
     def get_solution_candidates(self):
         """Get the current most likely solution based on knowledge."""

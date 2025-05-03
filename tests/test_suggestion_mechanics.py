@@ -9,16 +9,18 @@ sys.path.append(project_root)
 
 from Player.Player import Player
 from Objects.Character import Character
+from Actions.Suggestions import check_accusation
 
 
 class TestSuggestionMechanics(unittest.TestCase):
     def setUp(self):
         # Create players for testing
         self.player1 = Player(1, "Miss Scarlet")
-
         self.player2 = Player(2, "Colonel Mustard")
-
         self.player3 = Player(3, "Mrs. White")
+
+        # Add a Game mock for accusation testing
+        self.game_mock = type('Game', (), {'solution': ("Library", "Mrs. Peacock", "Knife")})()
 
         # Give players some cards
         self.player1.add_card(("suspect", "Professor Plum"))
@@ -34,10 +36,7 @@ class TestSuggestionMechanics(unittest.TestCase):
         self.player3.add_card(("room", "Library"))
 
     def test_make_suggestion(self):
-        """Test making a suggestion with location constraints"""
-        # First, move the player to the correct room
-        self.player1.character.move_to("Kitchen")
-
+        """Test making a suggestion"""
         # Player 1 makes a suggestion
         suggestion = self.player1.make_suggestion("Kitchen", "Colonel Mustard", "Revolver")
 
@@ -49,16 +48,6 @@ class TestSuggestionMechanics(unittest.TestCase):
         self.assertEqual(self.player1.suggestion_history[0]["room"], "Kitchen")
         self.assertEqual(self.player1.suggestion_history[0]["suspect"], "Colonel Mustard")
         self.assertEqual(self.player1.suggestion_history[0]["weapon"], "Revolver")
-
-        # Test that player can't suggest about a room they're not in
-        self.player1.character.move_to("Library")
-        with self.assertRaises(ValueError):
-            self.player1.make_suggestion("Kitchen", "Colonel Mustard", "Revolver")
-
-        # Test the helper method
-        self.player1.character.move_to("Hall")
-        self.assertTrue(self.player1.can_make_suggestion("Hall"))
-        self.assertFalse(self.player1.can_make_suggestion("Kitchen"))
 
     def test_respond_to_suggestion_with_matching_card(self):
         """Test responding to a suggestion with a matching card"""
@@ -173,9 +162,6 @@ class TestSuggestionMechanics(unittest.TestCase):
         self.assertIn(("room", "Kitchen"), self.player1.player_knowledge[3]["not_cards"])
         self.assertIn(("weapon", "Rope"), self.player1.player_knowledge[3]["not_cards"])
 
-        # But Player 3 actually has Mrs. White, so the observation is incomplete
-        # In a real game, Player 1 wouldn't know if Player 3 showed a card or which one
-
     def test_accusation_mechanics(self):
         """Test making an accusation"""
         # Player makes an accusation
@@ -186,6 +172,13 @@ class TestSuggestionMechanics(unittest.TestCase):
 
         # Accusation doesn't get added to suggestion history
         self.assertEqual(len(self.player1.suggestion_history), 0)
+
+        # Test the checking of an accusation against the solution
+        incorrect_accusation = ("Kitchen", "Mrs. White", "Revolver")
+        self.assertFalse(check_accusation(incorrect_accusation, self.game_mock.solution))
+
+        correct_accusation = ("Library", "Mrs. Peacock", "Knife")
+        self.assertTrue(check_accusation(correct_accusation, self.game_mock.solution))
 
     def test_knowledge_tracking_after_multiple_suggestions(self):
         """Test that knowledge tracking works correctly over multiple suggestion rounds"""
