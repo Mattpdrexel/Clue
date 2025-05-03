@@ -84,7 +84,7 @@ class MansionBoard:
         elif val == "?":
             return "bonus_card"
         else:
-            return None
+            return "hallway"
 
     def is_bonus_card_space(self, r, c):
         """Check if a cell is a bonus card space"""
@@ -104,3 +104,34 @@ class MansionBoard:
         if room:
             return [(entrance.row, entrance.column) for entrance in room.room_entrance_list]
         return []
+
+    def get_room_name_at_position(self, row, col):
+        """
+        Determine which room a given position is in, if any.
+
+        Args:
+            row (int): Row coordinate on the board
+            col (int): Column coordinate on the board
+
+        Returns:
+            str or None: The name of the room at the position, or None if not in a room
+        """
+        # Check if the position is within board boundaries
+        if not (0 <= row < self.rows and 0 <= col < self.cols):
+            return None
+
+        # Get the value at this position
+        val = str(self.grid[row][col])
+
+        # If it's directly a room name, return it
+        if val in ROOMS:
+            return val
+
+        # If it's a room entrance, extract the room name
+        if val.endswith("_e"):
+            room_name = val.replace("_e", "")
+            if room_name in ROOMS:
+                return room_name
+
+        # For all other cases (hallways, bonus card spaces, etc.), return None
+        return None
