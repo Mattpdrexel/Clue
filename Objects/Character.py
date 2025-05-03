@@ -3,7 +3,7 @@ from Data.Constants import CHARACTERS
 class Character:
     def __init__(self, name):
         self.name = name
-        self.position = None  # Starting position will be decided by the player through the game
+        self.position = "Clue" # Characters start in the Clue room
 
     def move_to(self, new_position):
         self.position = new_position

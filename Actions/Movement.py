@@ -1,4 +1,4 @@
-from Data.Constants import ROOMS
+from Data.Constants import SUSPECT_ROOMS
 
 
 def get_room_and_position(character_position, board):

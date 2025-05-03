@@ -25,9 +25,8 @@ class TestMovement(unittest.TestCase):
         self.character_board = CharacterBoard(self.mansion_board.rows, self.mansion_board.cols)
 
         # Create a test character and player
-        self.test_character = Character("Test Character")
-        self.test_player = Player(1, "Test Character")
-        self.test_player.set_character(self.test_character)
+        self.test_player = Player(1, "Miss Scarlet")
+        self.test_character = self.test_player.character
 
     def test_clue_room_exits(self):
         """Test that all expected exits from the Clue room are valid with die roll of 1"""

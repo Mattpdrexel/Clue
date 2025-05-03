@@ -1,5 +1,6 @@
 from Objects.Board import MansionBoard
-from Data.Constants import CHARACTERS, WEAPONS, ROOMS
+from Objects.Character import character_dict
+from Data.Constants import CHARACTERS, WEAPONS, SUSPECT_ROOMS
 from Actions.Movement import get_available_moves as movement_get_available_moves
 import random
 
@@ -23,13 +24,13 @@ class Player:
         """
         self.player_id = player_id
         self.character_name = character_name
-        self.character = None  # Will be set by the game when it starts
+        self.character = character_dict[character_name]
         self.hand = []  # Cards in the player's hand
 
         # Knowledge tracking
         self.possible_suspects = set(CHARACTERS)
         self.possible_weapons = set(WEAPONS)
-        self.possible_rooms = set(ROOMS)
+        self.possible_rooms = set(SUSPECT_ROOMS)
 
         # Definitely not in the solution (seen cards)
         self.confirmed_not_suspects = set()
@@ -41,10 +42,6 @@ class Player:
 
         # Store suggestions history
         self.suggestion_history = []
-
-    def set_character(self, character):
-        """Set the character object for this player."""
-        self.character = character
 
     def add_card(self, card):
         """Add a card to the player's hand and update knowledge."""
@@ -91,6 +88,35 @@ class Player:
         if self.character:
             self.character.move_to(new_position)
 
+
+    def can_make_suggestion(self, room):
+        """
+        Check if the player can make a suggestion about a specific room.
+
+        Args:
+            room (str): The room to make a suggestion about
+
+        Returns:
+            bool: True if player can make a suggestion, False otherwise
+        """
+        current_location = self.character.position
+
+        # If we're in a room (string position)
+        if isinstance(current_location, str):
+            return current_location == room
+
+        # If we're at a position (might be in room entrance)
+        return False
+
+    def can_make_accusation(self):
+        """
+        Check if the player can make an accusation.
+
+        Returns:
+            bool: True if player can make an accusation, False otherwise
+        """
+        return self.character.position == "Clue"
+
     def make_suggestion(self, room, suspect, weapon):
         """
         Make a suggestion about the crime.
@@ -101,8 +127,27 @@ class Player:
             weapon (str): The suspected weapon
 
         Returns:
-            tuple: (room, suspect, weapon)
+            tuple or None: (room, suspect, weapon) if successful, None if invalid
+
+        Raises:
+            ValueError: If player is not in the room where they're making the suggestion
         """
+        # Check if player is in the room they're suggesting
+        current_location = self.character.position
+
+        # For string position (room name)
+        if isinstance(current_location, str) and current_location != room:
+            raise ValueError(
+                f"You must be in the {room} to make a suggestion about it. Currently in {current_location}.")
+
+        # For tuple position (could be in a hallway or room entrance)
+        elif isinstance(current_location, tuple):
+            # Get room name at current position (if any)
+            # This requires access to the board, which we don't have in this method.
+            # We might need to restructure to pass the board in, or store a reference.
+            # For now, we'll just make it an explicit validation requirement elsewhere.
+            raise ValueError("You must be in a room to make a suggestion.")
+
         # Record this suggestion in history
         self.suggestion_history.append({
             "room": room,
@@ -124,8 +169,17 @@ class Player:
             weapon (str): The weapon used
 
         Returns:
-            tuple: (room, suspect, weapon)
+            tuple or None: (room, suspect, weapon) if successful, None if invalid
+
+        Raises:
+            ValueError: If player is not in the Clue room
         """
+        # Check if player is in the Clue room
+        current_location = self.character.position
+
+        if current_location != "Clue":
+            raise ValueError("You must be in the Clue room to make an accusation.")
+
         return (room, suspect, weapon)
 
     def update_knowledge_from_suggestion(self, suggesting_player, suggestion, responding_player, revealed_card=None):

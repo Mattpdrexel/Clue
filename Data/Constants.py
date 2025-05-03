@@ -1,5 +1,5 @@
 CHARACTERS = [
-    "Miss Scarlet", "Colonel Mustard", "Mrs White",
+    "Miss Scarlet", "Colonel Mustard", "Mrs. White",
     "Reverend Green", "Mrs Peacock", "Professor Plum"
 ]
 
@@ -13,6 +13,10 @@ ROOMS = [
     "Ball Room", "Conservatory", "Billiard Room", "Library",
     "Clue"          # central room
 ]
+
+# Set of rooms exluding Clue since outside of game
+SUSPECT_ROOMS = ROOMS.copy()
+SUSPECT_ROOMS.remove("Clue")
 
 # Secret passages between rooms (diagonally opposite rooms)
 SECRET_PASSAGES = {
