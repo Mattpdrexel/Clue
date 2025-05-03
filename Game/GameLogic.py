@@ -5,79 +5,80 @@ Module containing game logic for the Clue game.
 from Actions.Suggestions import check_accusation
 
 
+# Game/GameLogic.py
 def process_suggestion(game, suggesting_player, room, suspect, weapon):
     """
     Process a suggestion made by a player.
 
     Args:
-        game: The game instance
+        game: Game instance
         suggesting_player: Player making the suggestion
-        room (str): The room where the suggestion is being made
-        suspect (str): The suspected character
-        weapon (str): The suspected weapon
+        room: Room where the suggestion is being made
+        suspect: Suspected character
+        weapon: Suspected weapon
 
     Returns:
         tuple: (responding_player, revealed_card)
     """
-    suggestion = (room, suspect, weapon)
-
     # Make the suggestion
-    suggesting_player.make_suggestion(room, suspect, weapon)
+    suggestion = suggesting_player.make_suggestion(room, suspect, weapon)
 
-    # Check each player in turn order starting after the suggesting player
-    players = game.players
-    player_count = len(players)
-    suggesting_idx = players.index(suggesting_player)
+    # The character and weapon movement is now handled in Game.handle_suggestion
 
-    # Loop through players in order, starting after suggesting player
-    for i in range(1, player_count):
-        player_idx = (suggesting_idx + i) % player_count
-        responding_player = players[player_idx]
+    # Find the first player that can disprove the suggestion
+    responding_player = None
+    revealed_card = None
 
-        # Check if this player can disprove the suggestion
-        revealed_card = responding_player.respond_to_suggestion(suggestion)
+    # Start with the player to the left of the suggesting player
+    current_idx = (suggesting_player.player_id) % len(game.players)
 
-        if revealed_card:
-            # Update the suggesting player's knowledge
+    for _ in range(len(game.players) - 1):  # Check all players except the suggesting player
+        current_idx = (current_idx + 1) % len(game.players)
+        current_player = game.players[current_idx]
+
+        if current_player.player_id == suggesting_player.player_id:
+            continue  # Skip the suggesting player
+
+        # Try to disprove
+        card = current_player.respond_to_suggestion(suggestion)
+
+        if card:
+            responding_player = current_player
+            revealed_card = card
+
+            # Update suggesting player's knowledge with this card
             suggesting_player.update_knowledge_from_suggestion(
                 suggesting_player=suggesting_player.player_id,
                 suggestion=suggestion,
-                responding_player=responding_player.player_id,
-                revealed_card=revealed_card
+                responding_player=current_player.player_id,
+                revealed_card=card
             )
 
-            # Update all other players' knowledge that this player responded
-            for player in players:
-                if player != suggesting_player and player != responding_player:
-                    player.update_knowledge_from_suggestion(
+            # Other players update their knowledge about this interaction
+            for observer in game.players:
+                if observer.player_id != suggesting_player.player_id and observer.player_id != current_player.player_id:
+                    observer.update_knowledge_from_suggestion(
                         suggesting_player=suggesting_player.player_id,
                         suggestion=suggestion,
-                        responding_player=responding_player.player_id,
-                        revealed_card=None
+                        responding_player=current_player.player_id,
+                        revealed_card=None  # Observers don't see the card
                     )
 
-            return responding_player, revealed_card
+            # Once one player disproves, we're done
+            break
 
-    # No player could disprove
-    # Update all players' knowledge
-    for player in players:
-        if player != suggesting_player:
-            player.update_knowledge_from_suggestion(
-                suggesting_player=suggesting_player.player_id,
-                suggestion=suggestion,
-                responding_player=None,
-                revealed_card=None
-            )
+    # If no one could disprove, update all players' knowledge
+    if not responding_player:
+        for observer in game.players:
+            if observer.player_id != suggesting_player.player_id:
+                observer.update_knowledge_from_suggestion(
+                    suggesting_player=suggesting_player.player_id,
+                    suggestion=suggestion,
+                    responding_player=None,
+                    revealed_card=None
+                )
 
-    suggesting_player.update_knowledge_from_suggestion(
-        suggesting_player=suggesting_player.player_id,
-        suggestion=suggestion,
-        responding_player=None,
-        revealed_card=None
-    )
-
-    return None, None
-
+    return responding_player, revealed_card
 
 def process_accusation(game, accusing_player, room, suspect, weapon):
     """

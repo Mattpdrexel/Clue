@@ -1,24 +1,40 @@
+# Game/GameSetup.py (update)
 from Objects.Board import MansionBoard, CharacterBoard
 from Objects.Character import Character
-from Data.Constants import CHARACTERS
+from Objects.Weapon import Weapon
+from Data.Constants import CHARACTERS, WEAPONS
 import pandas as pd
+
 
 # Initialize the game
 def initialize_game():
     # Load and create the mansion board
     mansion_board_layout = pd.read_excel("Data/mansion_board_layout.xlsx", header=None)
     mansion_board = MansionBoard(mansion_board_layout)
-    
+
     # Create the character board with the same dimensions as mansion board
     character_board = CharacterBoard(mansion_board.rows, mansion_board.cols)
-    
+
     # Create character instances
     characters = {name: Character(name) for name in CHARACTERS}
-    
+
+    # Create weapon instances
+    weapons = {name: Weapon(name) for name in WEAPONS}
+
     # Place all characters in the Clue room
     setup_characters_in_clue_room(mansion_board, character_board, characters)
-    
-    return mansion_board, character_board, characters
+
+    # Place all weapons in the Clue room
+    setup_weapons_in_clue_room(weapons)
+
+    return mansion_board, character_board, characters, weapons
+
+
+def setup_weapons_in_clue_room(weapons):
+    """Place all weapons in the Clue room"""
+    for name, weapon in weapons.items():
+        weapon.move_to("Clue")
+        print(f"Placed {name} in the Clue room")
 
 
 def setup_characters_in_clue_room(mansion_board, character_board, characters):
@@ -54,26 +70,20 @@ def setup_characters_in_clue_room(mansion_board, character_board, characters):
 
     print(f"All characters have been placed in the Clue room")
 
-def print_game_state(mansion_board, character_board, characters):
+
+def print_game_state(mansion_board, character_board, characters, weapons):
     """Print the current state of the game"""
     print("\n===== GAME STATE =====")
     print("Mansion Board Dimensions:", mansion_board.rows, "x", mansion_board.cols)
-    
+
     print("\nCharacter Positions:")
     for name, character in characters.items():
         print(f"- {name}: {character.position}")
-    
+
+    print("\nWeapon Positions:")
+    for name, weapon in weapons.items():
+        print(f"- {name}: {weapon.location}")
+
     print("\nCharacter Board Positions:")
     for name, position in character_board.positions.items():
         print(f"- {name}: {position}")
-
-# Main game execution
-if __name__ == "__main__":
-    # Initialize game components
-    mansion_board, character_board, characters = initialize_game()
-    
-    # Display initial game state
-    print_game_state(mansion_board, character_board, characters)
-    
-    # Here you would normally start the game loop
-    print("\nGame initialized and ready to start!")
