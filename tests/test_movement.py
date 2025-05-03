@@ -1,4 +1,4 @@
-# /tests/test_movement.py
+# tests/test_movement.py
 import unittest
 import pandas as pd
 import sys
@@ -55,18 +55,12 @@ class TestMovement(unittest.TestCase):
         available_moves = self.test_player.get_available_moves(
             self.mansion_board, self.character_board, 3)
 
-        # Check that cells in nearby rooms are in available moves
-        hall_cells = self.mansion_board.get_room_cells("Hall")
-        dining_room_cells = self.mansion_board.get_room_cells("Dining Room")
-        ball_room_cells = self.mansion_board.get_room_cells("Ball Room")
+        # Check that nearby rooms are in available moves
+        expected_rooms = ["Hall", "Dining Room", "Ball Room"]
 
-        # Test if at least one cell in each room is reachable
-        self.assertTrue(any(cell in available_moves for cell in hall_cells),
-                        "Hall should be reachable from Clue room with roll of 3")
-        self.assertTrue(any(cell in available_moves for cell in dining_room_cells),
-                        "Dining Room should be reachable from Clue room with roll of 3")
-        self.assertTrue(any(cell in available_moves for cell in ball_room_cells),
-                        "Ball Room should be reachable from Clue room with roll of 3")
+        for room in expected_rooms:
+            self.assertIn(room, available_moves,
+                          f"{room} should be reachable from Clue room with roll of 3")
 
     def test_secret_passage(self):
         """Test that secret passages work correctly"""
@@ -77,12 +71,9 @@ class TestMovement(unittest.TestCase):
         available_moves = self.test_player.get_available_moves(
             self.mansion_board, self.character_board, 1)
 
-        # Get Kitchen cells
-        kitchen_cells = self.mansion_board.get_room_cells("Kitchen")
-
-        # Check that Kitchen cells are in available moves via secret passage
-        self.assertTrue(any(cell in available_moves for cell in kitchen_cells),
-                        "Kitchen should be reachable from Study via secret passage")
+        # Check that Kitchen is in available moves via secret passage
+        self.assertIn("Kitchen", available_moves,
+                      "Kitchen should be reachable from Study via secret passage")
 
     def test_legal_move_from_room_to_hallway(self):
         """Test that is_legal_move correctly validates moves from room to hallway"""
@@ -120,18 +111,14 @@ class TestMovement(unittest.TestCase):
         expected_exits = [(7, 11), (7, 12), (10, 9), (11, 9),
                           (14, 11), (14, 12), (10, 14), (11, 14)]
 
-        # Test each exit individually using is_legal_move
+        # Get available moves with roll of 1
+        available_moves = self.test_player.get_available_moves(
+            self.mansion_board, self.character_board, 1)
+
+        # Check that all expected exits are in available moves
         for exit_pos in expected_exits:
-            # Get a cell in the Clue room adjacent to this exit
-            # In a real test, you'd need to determine the exact exit and adjacent room cell
-
-            # For now, we'll test if the exit is in the available moves with roll of 1
-            available_moves = self.test_player.get_available_moves(
-                self.mansion_board, self.character_board, 1)
-
             self.assertIn(exit_pos, available_moves,
                           f"Exit position {exit_pos} should be available from Clue room with roll of 1")
-
 
     def test_character_blocking_movement(self):
         """Test that characters block pathways and prevent movement through them"""
@@ -146,11 +133,8 @@ class TestMovement(unittest.TestCase):
         available_moves = self.test_player.get_available_moves(
             self.mansion_board, self.character_board, 3)
 
-        # Get the Hall room cells
-        hall_cells = self.mansion_board.get_room_cells("Hall")
-
         # Test that Hall is NOT reachable with the blocking character in place
-        self.assertFalse(any(cell in available_moves for cell in hall_cells),
+        self.assertNotIn("Hall", available_moves,
                          "Hall should NOT be reachable from Clue room with roll of 3 when path is blocked")
 
         # Now remove the blocking character
@@ -161,8 +145,28 @@ class TestMovement(unittest.TestCase):
             self.mansion_board, self.character_board, 3)
 
         # Verify that Hall is now reachable
-        self.assertTrue(any(cell in available_moves for cell in hall_cells),
-                        "Hall should be reachable from Clue room with roll of 3 when path is clear")
+        self.assertIn("Hall", available_moves,
+                      "Hall should be reachable from Clue room with roll of 3 when path is clear")
+
+    def test_room_representation_in_moves(self):
+        """Test that rooms are represented by their names, not coordinates"""
+        # Place character in the Study
+        self.test_character.move_to("Study")
+
+        # Get available moves
+        available_moves = self.test_player.get_available_moves(
+            self.mansion_board, self.character_board, 3)
+
+        # Check that rooms are represented by names
+        for move in available_moves:
+            if isinstance(move, str):
+                self.assertTrue(move in self.mansion_board.room_dict.keys(),
+                                f"String move {move} should be a valid room name")
+
+        # Check that "Study" is in the moves (can stay in current room)
+        self.assertIn("Study", available_moves,
+                      "Current room 'Study' should be in available moves")
+
 
 if __name__ == "__main__":
     unittest.main()

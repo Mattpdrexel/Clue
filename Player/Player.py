@@ -28,6 +28,7 @@ class Player:
         self.character_name = character_name
         self.character = character_dict[character_name]
         self.hand = []  # Cards in the player's hand
+        self.eliminated = False  # Track if player has been eliminated from making moves
 
         # Knowledge tracking
         self.possible_suspects = set(CHARACTERS)
