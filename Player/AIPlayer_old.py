@@ -76,7 +76,7 @@ class AIPlayer(Player):
 
         # Print current target suggestion
         if self.current_target_suggestion:
-            suspect, weapon, room = self.current_target_suggestion
+            room, suspect, weapon = self.current_target_suggestion
             print(f"\nCurrent Target Suggestion: {suspect} in the {room} with the {weapon}")
 
         # Display suggestion stats
@@ -418,13 +418,14 @@ class AIPlayer(Player):
             }
 
             # If no one responded, we know these cards aren't in anyone's hand
+            # In AIPlayer when processing suggestions with no response, change:
             if responding_player is None:
                 if room not in self.eliminated_rooms:
-                    self.knowledge.possible_solution["rooms"].add(room)
+                    self.knowledge.possible_solution["rooms"].add(room)  # use add() instead of append()
                 if suspect not in self.eliminated_suspects:
-                    self.knowledge.possible_solution["suspects"].add(suspect)
+                    self.knowledge.possible_solution["suspects"].add(suspect)  # use add()
                 if weapon not in self.eliminated_weapons:
-                    self.knowledge.possible_solution["weapons"].add(weapon)
+                    self.knowledge.possible_solution["weapons"].add(weapon)  # use add()
 
             # If we know which card was shown, we can eliminate it from solution
         elif revealed_card is not None:
@@ -705,3 +706,5 @@ class AIPlayer(Player):
         # Late game: Take more risks
         else:
             return confidence_score <= 9  # e.g., 3 suspects, 3 weapons, 3 rooms
+
+

@@ -63,7 +63,7 @@ def play_game_auto(game):
 
     # Set a reasonable limit to prevent infinite games
     max_turns = 400
-    max_rounds = 200
+    max_rounds = 400
     current_turn = 0
     current_round = 0
 
