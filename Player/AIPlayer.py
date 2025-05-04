@@ -4,8 +4,8 @@ import random
 from typing import List, Tuple, Set, Dict
 from collections import deque, defaultdict
 import itertools
-from Knowledge.PlayerKnowledge import PlayerKnowledge
-
+import gc
+from Game.Game import Game
 
 class AIPlayer(Player):
     """An AI‑controlled Clue player powered by PlayerKnowledge."""
@@ -64,6 +64,8 @@ class AIPlayer(Player):
             random.shuffle(self.room_suggestion_space[room])
 
     # ----------------------------------------------- knowledge display
+    # Player/AIPlayer.py (modify the print_knowledge method)
+
     def print_knowledge(self):
         """Print the AI's current knowledge in a readable format."""
         if self.knowledge is None:
@@ -77,33 +79,9 @@ class AIPlayer(Player):
             suspect, weapon, room = self.current_target_suggestion
             print(f"\nCurrent Target Suggestion: {suspect} in the {room} with the {weapon}")
 
-        # Print possible solution
-        sol = self.knowledge.possible_solution
-        print("\nPossible Solution:")
-        print(f"  Suspects ({len(sol['suspects'])}): {', '.join(sorted(sol['suspects']))}")
-        print(f"  Weapons ({len(sol['weapons'])}): {', '.join(sorted(sol['weapons']))}")
-        print(f"  Rooms ({len(sol['rooms'])}): {', '.join(sorted(sol['rooms']))}")
-
-        # Print known cards in players' hands
-        print("\nKnown Cards:")
-        all_empty = True
-        for player_id, cards in self.knowledge.player_cards.items():
-            if cards:
-                all_empty = False
-                player_name = f"Player {player_id}"
-                if player_id == self.player_id:
-                    player_name = f"My Hand ({self.character_name})"
-                card_strs = []
-                for card_name in sorted(cards):
-                    card_strs.append(card_name)
-                print(f"  {player_name}: {', '.join(card_strs)}")
-
-        if all_empty:
-            print("  No cards known yet")
-
-        # Print suggestion stats
+        # Display suggestion stats
         if self._previous_suggestions:
-            print(f"\nSuggestions Made: {len(self._previous_suggestions)}")
+            print(f"Suggestions Made: {len(self._previous_suggestions)}")
 
             # Check for remaining suggestion combinations in current room
             if self.character and isinstance(self.character.position, str):
@@ -112,11 +90,8 @@ class AIPlayer(Player):
                     remaining = len(self.room_suggestion_space[current_room])
                     print(f"Remaining combinations in {current_room}: {remaining}")
 
-        # Print visited rooms
-        if self._visited_rooms:
-            print(f"\nVisited Rooms: {', '.join(sorted(self._visited_rooms))}")
-
         # Print deduction confidence
+        sol = self.knowledge.possible_solution
         suspect_count = len(sol["suspects"])
         weapon_count = len(sol["weapons"])
         room_count = len(sol["rooms"])
@@ -134,12 +109,26 @@ class AIPlayer(Player):
         else:
             confidence_level = "Very Low"
 
-        print(f"\nSolution Confidence: {confidence_level} ({total_count} possibilities)")
+        print(f"Solution Confidence: {confidence_level} ({total_count} possibilities)")
 
         # Print accusation readiness
         ready_to_accuse = self._ready_to_accuse()
         print(f"Ready to Accuse: {'Yes' if ready_to_accuse else 'No'}")
 
+        # Get the game instance and update the scoresheet if available
+        game = self._get_game_instance()
+        if game:
+            game.update_and_display_scoresheets()
+
+    def _get_game_instance(self):
+        """Helper method to get the game instance."""
+        # This is a bit of a hack since we don't have direct access to the game instance
+        # In a real implementation, the game would be passed to the player or tracked
+        import sys
+        for obj in gc.get_objects():
+            if isinstance(obj, Game):
+                return obj
+        return None
     # --------------------------------------------------------- API hooks
     def make_move(self, game, available_moves: List, dice_roll: int):
         """Choose where to move this turn."""

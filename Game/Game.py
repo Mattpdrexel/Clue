@@ -1,7 +1,7 @@
 import random
 from Game.GameSetup import initialize_game
 from Game.TurnManagement import process_turn, process_ai_turn
-
+import os
 
 class Game:
     """
@@ -110,6 +110,33 @@ class Game:
             player_idx = i % len(self.players)
             self.players[player_idx].add_card(card)
 
+    # Game/Game.py (add to the existing class)
+
+    def update_and_display_scoresheets(self):
+        """Update and display scoresheets for all players."""
+        from Knowledge.ScoreSheet import ScoreSheet
+
+        # Create a scoresheet with all player names
+        player_names = [player.character_name for player in self.players]
+        scoresheet = ScoreSheet(player_names)
+
+        # Update the scoresheet with each player's knowledge
+        for i, player in enumerate(self.players):
+            if hasattr(player, 'knowledge') and player.knowledge:
+                scoresheet.update_from_player_knowledge(i, player.knowledge)
+
+        # Display the scoresheet for the current player
+        current_player = self.players[self.current_player_idx]
+        if hasattr(current_player, 'is_ai') and current_player.is_ai:
+            print(scoresheet.render_for_player(self.current_player_idx))
+        else:
+            # For human players, don't highlight any specific player
+            print(scoresheet.render_text())
+
+        # Also save the scoresheet to a file in the Output directory
+        os.makedirs("Output", exist_ok=True)
+        scoresheet.save_to_file(f"Output/scoresheet_round_{self.current_round}.txt")
+
     # Game/Game.py (update)
     def play_game(self):
         """Main game loop."""
@@ -150,3 +177,4 @@ class Game:
         """End the game."""
         self.game_over = True
         self.winner = winner
+
