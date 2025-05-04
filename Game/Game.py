@@ -36,8 +36,7 @@ class Game:
     def setup_players(self, num_human_players, num_ai_players):
         """Set up the players for the game."""
         from Player.Player import Player
-        from Player.SimpleAIPlayer import SimpleAIPlayer
-        from Player.SmarterAIPlayer import SmarterAIPlayer
+        from Player.AIPlayer import AIPlayer
 
         self.players = []
         player_id = 0
@@ -68,48 +67,20 @@ class Game:
             self.players.append(player)
             player_id += 1
 
-        # Ask for AI type if we have AI players
-        ai_type = "simple"
-        if num_ai_players > 0:
-            print("\nChoose AI difficulty:")
-            print("1. Simple AI (makes random but legal moves)")
-            print("2. Smarter AI (uses advanced strategy and deduction)")
-
-            while True:
-                try:
-                    ai_choice = int(input("Choose AI difficulty (1-2): "))
-                    if ai_choice == 1:
-                        ai_type = "simple"
-                        break
-                    elif ai_choice == 2:
-                        ai_type = "smarter"
-                        break
-                    else:
-                        print("Invalid choice. Please try again.")
-                except ValueError:
-                    print("Please enter a number.")
-
-        # Create AI players
+        # Create AI players (using standard AIPlayer)
         for _ in range(num_ai_players):
             available_characters = [name for name in self.characters.keys()
                                     if name not in [p.character_name for p in self.players]]
             character_name = random.choice(available_characters)
 
-            if ai_type == "simple":
-                ai_player = SimpleAIPlayer(player_id, character_name)
-            else:  # smarter
-                ai_player = SmarterAIPlayer(player_id, character_name)
-
+            ai_player = AIPlayer(player_id, character_name)
             ai_player.character = self.characters[character_name]
             self.players.append(ai_player)
             player_id += 1
 
         print("\nPlayers in the game:")
         for player in self.players:
-            player_type = "Simple AI" if hasattr(player, 'is_ai') and player.is_ai and isinstance(player,
-                                                                                                  SimpleAIPlayer) else \
-                "Smarter AI" if hasattr(player, 'is_ai') and player.is_ai and isinstance(player,
-                                                                                         SmarterAIPlayer) else "Human"
+            player_type = "Simple AI" if hasattr(player, 'is_ai') and player.is_ai else "Human"
             print(f"{player.character_name} ({player_type})")
 
     def setup_solution(self):

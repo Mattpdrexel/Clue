@@ -1,161 +1,177 @@
 # Player/Player.py
-from Objects.Board import MansionBoard
-from Objects.Character import character_dict
-from Data.Constants import CHARACTERS, WEAPONS, SUSPECT_ROOMS
-from Actions.Movement import get_available_moves as movement_get_available_moves
-import Actions.Suggestions as suggestion_actions
-import random
+from Knowledge.PlayerKnowledge import PlayerKnowledge
 
 
 class Player:
-    """
-    Base Player class for the Clue game.
-
-    This class represents a player in the game, tracks their knowledge about
-    cards, manages their character's position, and provides methods for
-    game actions like moving, suggesting, and accusing.
-    """
+    """Base Player class for the Clue game."""
 
     def __init__(self, player_id, character_name):
-        """
-        Initialize a new Player.
-
-        Args:
-            player_id (int): Unique identifier for the player
-            character_name (str): The character this player will control
-        """
+        """Initialize a new Player."""
         self.player_id = player_id
         self.character_name = character_name
-        self.character = character_dict[character_name]
+        self.character = None  # Will be set later
         self.hand = []  # Cards in the player's hand
+        self.eliminated = False
         self.made_wrong_accusation = False
-        self.eliminated = False  # Track if player has been eliminated from making moves
 
-        # Knowledge tracking
-        self.possible_suspects = set(CHARACTERS)
-        self.possible_weapons = set(WEAPONS)
-        self.possible_rooms = set(SUSPECT_ROOMS)
+        # New unified knowledge system
+        self.knowledge = None
 
-        # Definitely not in the solution (seen cards)
-        self.confirmed_not_suspects = set()
-        self.confirmed_not_weapons = set()
-        self.confirmed_not_rooms = set()
+    def initialize_knowledge(self, game):
+        """Initialize the knowledge base with game information."""
+        self.knowledge = PlayerKnowledge(self.player_id, game)
 
-        # For more advanced play: track what other players have seen
-        self.player_knowledge = {}  # player_id -> {cards they've revealed to this player}
-
-        # Store suggestions history
-        self.suggestion_history = []
-
-    def eliminate(self):
-        """Mark this player as eliminated from making moves."""
-        self.eliminated = True
-        self.made_wrong_accusation = True
-
+        # Add cards from hand to knowledge base
+        for card in self.hand:
+            card_type, card_name = card
+            self.knowledge.add_card_to_hand(card_type, card_name)
 
     def add_card(self, card):
-        """Add a card to the player's hand and update knowledge."""
+        """Add a card to the player's hand."""
         self.hand.append(card)
-        self._update_knowledge_from_card(card)
 
-    def _update_knowledge_from_card(self, card):
-        """Update knowledge based on seeing a card."""
-        card_type, card_name = card
-
-        if card_type == "suspect":
-            self.confirmed_not_suspects.add(card_name)
-            self.possible_suspects.discard(card_name)
-        elif card_type == "weapon":
-            self.confirmed_not_weapons.add(card_name)
-            self.possible_weapons.discard(card_name)
-        elif card_type == "room":
-            self.confirmed_not_rooms.add(card_name)
-            self.possible_rooms.discard(card_name)
-
-    def get_available_moves(self, board, character_board, die_roll):
-        """
-        Get all available moves for this player based on die roll.
-
-        Args:
-            board (MansionBoard): The game board
-            character_board (CharacterBoard): Board tracking character positions
-            die_roll (int): Result of die roll
-
-        Returns:
-            list: List of valid positions (row, col) the player can move to
-        """
-        if not self.character:
-            return []
-
-        # Use the character's position or room
-        character_position = self.character.position
-
-        # Use the Movement module's implementation
-        return movement_get_available_moves(character_position, board, character_board, die_roll)
-
-    def move(self, new_position):
-        """Move the player's character to a new position."""
-        if self.character:
-            self.character.move_to(new_position)
+        # Update knowledge base if it's initialized
+        if self.knowledge is not None:
+            card_type, card_name = card
+            self.knowledge.add_card_to_hand(card_type, card_name)
 
     def make_suggestion(self, room, suspect, weapon):
+        """Make a suggestion."""
+        # Record in knowledge - if initialized
+        if self.knowledge is not None:
+            # Future implementation: record own suggestion in knowledge
+            pass
+
+        return (room, suspect, weapon)
+
+    def respond_to_suggestion(self, suggestion):
         """
-        Make a suggestion about the crime.
+        Respond to a suggestion by showing a matching card if possible.
 
         Args:
-            room (str): The room where the suggestion is being made
-            suspect (str): The suspected character
-            weapon (str): The suspected weapon
+            suggestion: Tuple of (room, suspect, weapon)
 
         Returns:
-            tuple: (room, suspect, weapon)
+            The card shown as a tuple (card_type, card_name) or None if no matching card
         """
-        return suggestion_actions.make_suggestion(self, room, suspect, weapon)
+        room, suspect, weapon = suggestion
+        matching_cards = []
+
+        # Check if player has any of the suggested cards
+        for card_type, card_name in self.hand:
+            if (card_type == "room" and card_name == room) or \
+                    (card_type == "suspect" and card_name == suspect) or \
+                    (card_type == "weapon" and card_name == weapon):
+                matching_cards.append((card_type, card_name))
+
+        # If player has matching cards, show one
+        if matching_cards:
+            # Basic implementation: just return the first matching card
+            # More sophisticated players might choose strategically
+            return matching_cards[0]
+
+        return None
 
     def make_accusation(self, room, suspect, weapon):
-        """
-        Make a final accusation about the crime.
-
-        Args:
-            room (str): The room where the crime took place
-            suspect (str): The character who committed the crime
-            weapon (str): The weapon used
-
-        Returns:
-            tuple: (room, suspect, weapon)
-        """
-        return suggestion_actions.make_accusation(room, suspect, weapon)
+        """Make an accusation."""
+        return (room, suspect, weapon)
 
     def update_knowledge_from_suggestion(self, suggesting_player, suggestion, responding_player, revealed_card=None):
         """
         Update knowledge based on a suggestion and its response.
 
         Args:
-            suggesting_player (int): Player ID who made the suggestion
-            suggestion (tuple): (room, suspect, weapon)
-            responding_player (int): Player ID who responded (or None)
-            revealed_card (tuple, optional): Card that was revealed to suggesting_player
+            suggesting_player: Player ID who made the suggestion
+            suggestion: Tuple of (room, suspect, weapon)
+            responding_player: Player ID who responded (or None)
+            revealed_card: Card that was revealed to suggesting_player (or None)
         """
-        suggestion_actions.update_knowledge_from_suggestion(
-            self, suggesting_player, suggestion, responding_player, revealed_card
-        )
+        # Update unified knowledge system
+        if self.knowledge is not None:
+            self.knowledge.record_suggestion(
+                suggesting_player, suggestion, responding_player, revealed_card
+            )
+            self.knowledge.apply_deductions()
 
-    def respond_to_suggestion(self, suggestion):
+    def update_knowledge_from_accusation(self, accusing_player, accusation, is_correct):
         """
-        Respond to another player's suggestion if possible.
+        Update knowledge based on an accusation.
 
         Args:
-            suggestion (tuple): (room, suspect, weapon)
+            accusing_player: Player ID who made the accusation
+            accusation: Tuple of (room, suspect, weapon)
+            is_correct: Whether the accusation was correct
+        """
+        # Update unified knowledge system
+        if self.knowledge is not None:
+            self.knowledge.record_accusation(accusing_player, accusation, is_correct)
+            self.knowledge.apply_deductions()
+
+    def should_make_accusation(self, game=None):
+        """
+        Determine if player should make an accusation.
+
+        Args:
+            game: The Game instance (optional)
 
         Returns:
-            tuple or None: The card being shown, or None if can't disprove
+            bool: True if player should make an accusation
         """
-        return suggestion_actions.respond_to_suggestion(self, suggestion)
+        # Default implementation - don't make accusations automatically
+        return False
+
+    def eliminate(self):
+        """Mark this player as eliminated from making moves."""
+        self.eliminated = True
+        self.made_wrong_accusation = True
 
     def get_solution_candidates(self):
-        """Get the current most likely solution based on knowledge."""
+        """
+        Get the current solution candidates based on knowledge.
+
+        Returns:
+            dict: Dictionary with keys 'suspects', 'weapons', 'rooms' containing sets of candidates
+        """
+        if self.knowledge is not None:
+            return self.knowledge.best_guess_solution()
+
+        # Fallback if knowledge system not initialized
         return {
-            "suspects": self.possible_suspects,
-            "weapons": self.possible_weapons,
-            "rooms": self.possible_rooms
+            "suspects": set(),
+            "weapons": set(),
+            "rooms": set()
         }
+
+    # Player/Player.py
+
+    def get_available_moves(self, mansion_board, character_board, dice_roll):
+        """
+        Get available moves for a player based on the current board state and dice roll.
+
+        Args:
+            mansion_board: The mansion board
+            character_board: The character board with player positions
+            dice_roll: The number of steps the player can take
+
+        Returns:
+            A list of valid moves the player can make
+        """
+        from Actions.Movement import get_available_moves
+
+        # Get the character's current position
+        current_position = self.character.position
+
+        # Use the movement module to calculate available moves
+        return get_available_moves(
+            mansion_board,
+            character_board,
+            current_position,
+            dice_roll
+        )
+
+    def move(self, position):
+        """Move the player's character to a new position."""
+        if self.character:
+            self.character.position = position
+        else:
+            print(f"Warning: Character not set for {self.character_name}")
