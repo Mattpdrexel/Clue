@@ -1,4 +1,5 @@
-# Player/AIPlayer.py
+# This one does not crash, but is suboptimal behavior wise
+
 from Player.Player import Player
 import random
 from typing import List, Tuple, Set

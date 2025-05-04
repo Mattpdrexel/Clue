@@ -290,3 +290,188 @@ def can_use_secret_passage(character_position, board):
             return True, room_obj.secret_passage_to
 
     return False, None
+
+
+def calculate_manhattan_distance(position1, position2):
+    """
+    Calculate Manhattan distance between two positions.
+
+    Args:
+        position1 (tuple): First position (row, col)
+        position2 (tuple): Second position (row, col)
+
+    Returns:
+        int: Manhattan distance between positions
+    """
+    row1, col1 = position1
+    row2, col2 = position2
+    return abs(row1 - row2) + abs(col1 - col2)
+
+# This is a simple estimate of distance that does not account for obstacles.
+def get_distance_to_room(position, target_room, board):
+    """
+    Calculate the Manhattan distance from a position to the nearest entrance of a target room.
+
+    Args:
+        position: Position in any format (room name, (row, col) tuple, or (room, row, col) tuple)
+        target_room (str): The name of the target room
+        board (MansionBoard): The game board
+
+    Returns:
+        int: Manhattan distance to the nearest entrance of the target room
+    """
+    # Get source position coordinates
+    try:
+        source_room, source_row, source_col = get_room_and_position(position, board)
+    except ValueError:
+        return 99  # Invalid source position
+
+    # If source is already in target room, distance is 0
+    if source_room == target_room:
+        return 0
+
+    # If source is in a room with a secret passage to the target room, distance is 1
+    if source_room:
+        source_room_obj = board.get_room(source_room)
+        if hasattr(source_room_obj, 'secret_passage_to') and source_room_obj.secret_passage_to == target_room:
+            return 1
+
+    # Get all entrances to the target room
+    target_entrances = board.get_room_entrances(target_room)
+    if not target_entrances:
+        return 99  # Invalid target room or no entrances
+
+    # If source is in a room, use room entrances as starting points
+    if source_room and source_room != target_room:
+        source_entrances = board.get_room_entrances(source_room)
+        if source_entrances:
+            # Calculate minimum distance from any source entrance to any target entrance
+            min_distance = float('inf')
+            for src_entrance in source_entrances:
+                for tgt_entrance in target_entrances:
+                    distance = calculate_manhattan_distance(src_entrance, tgt_entrance)
+                    min_distance = min(min_distance, distance)
+            return min_distance
+
+    # For hallway positions or rooms without defined entrances,
+    # calculate distance to nearest target entrance
+    source_pos = (source_row, source_col)
+    return min(calculate_manhattan_distance(source_pos, entrance) for entrance in target_entrances)
+
+
+def get_pathfinding_distance(position, target_room, board, character_board=None):
+    """
+    Calculate the shortest path distance from a position to a target room,
+    accounting for corridors and obstacles.
+
+    Args:
+        position: Position in any format (room name, (row, col) tuple, or (room, row, col) tuple)
+        target_room (str): The name of the target room
+        board (MansionBoard): The game board
+        character_board (CharacterBoard, optional): Board tracking character positions for obstacle detection
+
+    Returns:
+        int: Shortest path distance (steps needed) to reach the target room
+             Returns 0 if already in the target room
+             Returns 1 if target can be reached via secret passage
+             Returns 99 if no path exists
+    """
+    # Get source position coordinates
+    try:
+        source_room, source_row, source_col = get_room_and_position(position, board)
+    except ValueError:
+        return 99  # Invalid source position
+
+    # If source is already in target room, distance is 0
+    if source_room == target_room:
+        return 0
+
+    # If source is in a room with a secret passage to the target room, distance is 1
+    if source_room:
+        source_room_obj = board.get_room(source_room)
+        if hasattr(source_room_obj, 'secret_passage_to') and source_room_obj.secret_passage_to == target_room:
+            return 1
+
+    # Get target room entrances
+    target_entrances = board.get_room_entrances(target_room)
+    if not target_entrances:
+        return 99  # Invalid target room or no entrances
+
+    # Starting positions for BFS
+    start_positions = []
+
+    # If starting in a room, use room entrances as starting points
+    if source_room and source_room != target_room:
+        source_entrances = board.get_room_entrances(source_room)
+        if source_entrances:
+            for entrance in source_entrances:
+                # For each room entrance, check the four adjacent cells
+                entrance_row, entrance_col = entrance
+                for dr, dc in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                    adj_row, adj_col = entrance_row + dr, entrance_col + dc
+
+                    # Skip if out of bounds
+                    if not (0 <= adj_row < board.rows and 0 <= adj_col < board.cols):
+                        continue
+
+                    # Check if this is a valid hallway cell
+                    cell_type = board.get_cell_type(adj_row, adj_col)
+                    if cell_type in ["hallway", "bonus_card"]:
+                        # Check if cell is occupied (if character_board provided)
+                        if character_board and character_board.get_cell_content(adj_row, adj_col) is not None:
+                            continue
+
+                        start_positions.append(((adj_row, adj_col), 1))  # (position, distance)
+    else:
+        # Starting from hallway, use the current position
+        start_positions.append(((source_row, source_col), 0))
+
+    # If no valid starting positions, path is impossible
+    if not start_positions:
+        return 99
+
+    # BFS for shortest path
+    visited = set()
+    queue = start_positions
+
+    while queue:
+        (row, col), distance = queue.pop(0)
+
+        # Skip if we've already visited this cell
+        if (row, col) in visited:
+            continue
+
+        # Mark as visited
+        visited.add((row, col))
+
+        # Check if we've reached a target entrance
+        for target_row, target_col in target_entrances:
+            if abs(row - target_row) + abs(col - target_col) == 1:
+                return distance + 1  # +1 for the step to the entrance
+
+        # Explore adjacent cells
+        for dr, dc in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            new_row, new_col = row + dr, col + dc
+
+            # Skip if out of bounds
+            if not (0 <= new_row < board.rows and 0 <= new_col < board.cols):
+                continue
+
+            # Skip if already visited
+            if (new_row, new_col) in visited:
+                continue
+
+            # Check if this is a valid hallway cell
+            cell_type = board.get_cell_type(new_row, new_col)
+            if cell_type not in ["hallway", "bonus_card"]:
+                continue
+
+            # Check if cell is occupied (if character_board provided)
+            if character_board and character_board.get_cell_content(new_row, new_col) is not None:
+                continue
+
+            # Add to queue
+            queue.append(((new_row, new_col), distance + 1))
+
+    # If we've exhausted all options and haven't found a path
+    return 99  # No path exists
