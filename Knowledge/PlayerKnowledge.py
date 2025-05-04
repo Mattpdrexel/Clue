@@ -169,9 +169,9 @@ class PlayerKnowledge:
             for category in self.possible_solution:
                 self.possible_solution[category].clear()
 
-            self.possible_solution["rooms"].add(room)
-            self.possible_solution["suspects"].add(suspect)
-            self.possible_solution["weapons"].add(weapon)
+            self.possible_solution["rooms"].append(room)
+            self.possible_solution["suspects"].append(suspect)
+            self.possible_solution["weapons"].append(weapon)
         # If incorrect, at least one card is not in the solution
         else:
             # We don't know which one, so we can't eliminate any specific card yet

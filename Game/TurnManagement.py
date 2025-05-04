@@ -44,7 +44,7 @@ def process_ai_turn(game, ai_player):
     starting_room = get_room_from_position(game.mansion_board, starting_position)
 
     # Roll the die and get available moves
-    die_roll = random.randint(1, 6)
+    die_roll = random.randint(1, 12)
     print(f"{ai_player.character_name} rolled a {die_roll}")
 
     available_moves = ai_player.get_available_moves(
@@ -68,7 +68,7 @@ def process_ai_turn(game, ai_player):
     ai_player.handle_accusation(game)
 
     # Print knowledge
-    # Interface.print_knowledge_sheet(player)
+    ai_player.print_knowledge()
     print()
 
 

@@ -55,7 +55,7 @@ def play_game_auto(game):
     print("\nStarting the game of Clue with all AI players!")
 
     # Set a reasonable turn limit to prevent infinite games
-    max_turns = 200
+    max_turns = 400
     current_turn = 0
 
     while not game.game_over and current_turn < max_turns:
