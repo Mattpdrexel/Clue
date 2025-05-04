@@ -61,7 +61,7 @@ def process_ai_turn(game, ai_player):
     new_room = get_room_from_position(game.mansion_board, new_position)
 
     # Handle room-related actions (suggestion)
-    handle_ai_room_actions(game, ai_player, starting_room, new_room)
+    handle_room_actions(game, ai_player, starting_room, new_room)
 
     # Handle AI accusation decision
     ai_player.handle_accusation(game)
@@ -108,38 +108,55 @@ def handle_human_movement(game, player, available_moves):
 
 
 def handle_room_actions(game, player, starting_room, new_room):
-    """Handle actions related to being in a room (suggestions)."""
+    """Handle actions related to being in a room (suggestions) for any player type."""
     if new_room and new_room != "Clue":
+        is_ai = hasattr(player, 'is_ai') and player.is_ai
+
         if starting_room != new_room:
             # Player entered a new room - must make a suggestion
             print(f"{player.character_name} entered the {new_room} and must make a suggestion.")
-            suggestion = handle_human_suggestion(game, player, new_room, required=True)
-            process_suggestion(game, player, *suggestion)
+
+            # Get suggestion based on player type
+            if is_ai:
+                suggestion = player.handle_suggestion(game, new_room)
+                room, suspect, weapon = suggestion
+            else:
+                suggestion = handle_human_suggestion(game, player, new_room, required=True)
+                suspect, weapon, room = suggestion
+
+            # Display the suggestion clearly for all players
+            print(f"\n🔍 SUGGESTION: {player.character_name} suggests {suspect} committed the murder in the {room} with the {weapon}")
+
+            # Process the suggestion
+            process_suggestion(game, player, suspect, weapon, room)
+
         elif starting_room == new_room:
             # Player stayed in the same room - suggestion is optional
-            print(f"You are in the {new_room}. You may make a suggestion.")
-            choice = input("Would you like to make a suggestion? (y/n): ")
-            if choice.lower().startswith('y'):
-                suggestion = handle_human_suggestion(game, player, new_room, required=False)
-                process_suggestion(game, player, *suggestion)
+            should_suggest = False
 
+            if is_ai:
+                # For AI players, use their decision logic if available
+                should_suggest = hasattr(player, 'should_make_suggestion') and player.should_make_suggestion(game, new_room)
+            else:
+                # For human players, ask if they want to make a suggestion
+                print(f"You are in the {new_room}. You may make a suggestion.")
+                choice = input("Would you like to make a suggestion? (y/n): ")
+                should_suggest = choice.lower().startswith('y')
 
-def handle_ai_room_actions(game, ai_player, starting_room, new_room):
-    """Handle actions related to an AI being in a room (suggestions)."""
-    if new_room and new_room != "Clue":
-        # Get AI to decide whether to make a suggestion
-        should_suggest = True
-        if starting_room == new_room:
-            # Optional suggestion if staying in the same room
-            should_suggest = hasattr(ai_player, 'should_make_suggestion') and ai_player.should_make_suggestion(game,
-                                                                                                               new_room)
-        else:
-            # Required suggestion if entering a new room
-            print(f"{ai_player.character_name} entered the {new_room} and must make a suggestion.")
+            if should_suggest:
+                if is_ai:
+                    suggestion = player.handle_suggestion(game, new_room)
+                    room, suspect, weapon = suggestion
+                else:
+                    suggestion = handle_human_suggestion(game, player, new_room, required=False)
+                    suspect, weapon, room = suggestion
 
-        if should_suggest:
-            suggestion = ai_player.handle_suggestion(game, new_room)
-            process_suggestion(game, ai_player, *suggestion)
+                # Display the suggestion clearly for all players
+                print(f"\n🔍 SUGGESTION: {player.character_name} suggests {suspect} committed the murder in the {room} with the {weapon}")
+
+                # Process the suggestion
+                process_suggestion(game, player, suspect, weapon, room)
+
 
 def handle_human_suggestion(game, player, room_name, required=False):
     """Handle a human player making a suggestion."""
@@ -177,10 +194,7 @@ def handle_human_suggestion(game, player, room_name, required=False):
         except ValueError:
             print("Please enter a number.")
 
-    suggestion = (character, weapon, room_name)
-    print(f"\n{player.character_name} suggests: {character} in the {room_name} with the {weapon}")
-
-    return suggestion
+    return (character, weapon, room_name)
 
 
 def handle_accusation_option(game, player):
