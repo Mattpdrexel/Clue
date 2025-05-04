@@ -1,31 +1,97 @@
 # Player/SmarterAIPlayer.py
 from Player.KnowledgeAIPlayer import KnowledgeAIPlayer
+from Knowledge.ImprovedKnowledgeBase import ImprovedKnowledgeBase
 import random
+from collections import deque
 
 
 class SmarterAIPlayer(KnowledgeAIPlayer):
     """
-    A smarter AI player that uses advanced strategies based on the knowledge base.
+    A smarter AI player that uses a more sophisticated knowledge base
+    to make better deductions and gameplay decisions.
     """
 
     def __init__(self, player_id, character_name):
         """Initialize the SmarterAIPlayer."""
         super().__init__(player_id, character_name)
-
-        # Movement strategy parameters
+        self.last_positions = deque(maxlen=3)  # Initialize with max length for automatic size management
+        self.kb = None
+        self.turn_count = 0
+        self.previous_suggestions = set()
+        self.must_exit_next_turn = False
+        self.last_suggestion_room = None
         self.target_room = None
-        self.previous_rooms = []
-        self.max_previous_rooms = 3
+        self.eliminated = False
 
-        # A patience threshold for making accusations
-        # If no progress is made over this many turns, consider making accusation
-        self.patience_threshold = 10
-        self.last_knowledge_state = None
-        self.no_progress_turns = 0
+    def initialize_knowledge_base(self, game):
+        """Initialize the improved knowledge base with game information."""
+        self.game = game  # Store reference to game
+        self.kb = ImprovedKnowledgeBase(game, self.player_id)
+        self.kb.initialize_with_hand(self.hand)
+
+    def choose_suggestion(self, game, room):
+        """
+        Choose which suspect and weapon to suggest based on knowledge.
+        Uses expected information gain to choose the most informative suggestion.
+
+        Args:
+            game: The Game instance
+            room: The current room
+
+        Returns:
+            tuple: (suspect, weapon) for the suggestion
+        """
+        # Check if player is eliminated
+        if self.eliminated:
+            return None
+
+        # Get all possible suspects and weapons
+        envelope = self.kb.envelope_candidates()
+        possible_suspects = list(envelope["suspects"])
+        possible_weapons = list(envelope["weapons"])
+
+        # If no candidates remain, fall back to all options
+        if not possible_suspects:
+            possible_suspects = game.character_names
+        if not possible_weapons:
+            possible_weapons = game.weapon_names
+
+        # Create all possible combinations
+        suggestions = []
+        for suspect in possible_suspects:
+            for weapon in possible_weapons:
+                # Skip combinations we've already suggested
+                if (suspect, weapon, room) in self.previous_suggestions:
+                    continue
+
+                # Calculate information gain - negate to maximize information
+                room_card = room  # Ensure we're using the room name as a string
+                score = -self.kb.expected_information_gain({suspect, weapon, room_card})
+                suggestions.append((score, (suspect, weapon)))
+
+        # If no valid suggestion found, just pick randomly
+        if not suggestions:
+            suspect = random.choice(possible_suspects)
+            weapon = random.choice(possible_weapons)
+            return (suspect, weapon)
+
+        # Sort by score (lowest/negative score = highest info gain)
+        suggestions.sort()
+
+        # Return the suggestion with highest info gain
+        return suggestions[0][1]
+
+    def _get_room_name(self, move):
+        """Extract the room name from a move object"""
+        if isinstance(move, str):
+            return move
+        elif isinstance(move, tuple) and len(move) == 3:
+            return move[0]
+        return None  # For hallway moves (tuples of length 2)
 
     def make_move(self, game, available_moves, die_roll):
         """
-        Make a strategic move based on knowledge.
+        Make a strategic move based on current knowledge.
 
         Args:
             game: The Game instance
@@ -35,231 +101,217 @@ class SmarterAIPlayer(KnowledgeAIPlayer):
         Returns:
             The chosen move
         """
+        # Check if player is eliminated
+        if self.eliminated:
+            return None
+
         # Initialize knowledge base if needed
         if self.kb is None:
             self.initialize_knowledge_base(game)
 
-        # Track if any new knowledge has been gained
-        current_knowledge_state = (
-            len(self.kb.envelope_suspects),
-            len(self.kb.envelope_weapons),
-            len(self.kb.envelope_rooms)
-        )
+        # Increment turn counter
+        self.turn_count += 1
 
-        if self.last_knowledge_state == current_knowledge_state:
-            self.no_progress_turns += 1
-        else:
-            self.no_progress_turns = 0
-            self.last_knowledge_state = current_knowledge_state
-
-        # If should make accusation and Clue room is available, prioritize it
-        if (self.no_progress_turns >= self.patience_threshold or
-                len(self.kb.envelope_suspects) * len(self.kb.envelope_weapons) * len(self.kb.envelope_rooms) <= 8):
-            if "Clue" in available_moves:
-                return "Clue"
-
-        # If we need to exit room, prioritize hallway moves
-        if self.must_exit_next_turn and available_moves:
-            # Split moves into rooms and corridors
-            room_moves = [m for m in available_moves if isinstance(m, str)]
-            corridor_moves = [m for m in available_moves if not isinstance(m, str)]
-
-            if corridor_moves:
-                self.must_exit_next_turn = False
-                return random.choice(corridor_moves)
-
-        # Split available moves into rooms and corridors
-        room_moves = [m for m in available_moves if isinstance(m, str)]
-        corridor_moves = [m for m in available_moves if not isinstance(m, str)]
-
-        # If we're in a corridor and rooms are available, prioritize rooms
-        if room_moves:
-            # Preference for rooms we haven't visited recently
-            unvisited_rooms = [r for r in room_moves if r not in self.previous_rooms]
-
-            if unvisited_rooms:
-                chosen_room = self._choose_best_room(unvisited_rooms)
-                self._update_previous_rooms(chosen_room)
-                return chosen_room
-            else:
-                chosen_room = self._choose_best_room(room_moves)
-                self._update_previous_rooms(chosen_room)
-                return chosen_room
-
-        # If only corridor moves are available, choose one
-        if corridor_moves:
-            return random.choice(corridor_moves)
-
-        # Fallback to any available move
-        if available_moves:
-            return random.choice(available_moves)
-
-        return None
-
-    def _choose_best_room(self, rooms):
-        """Choose the most informative room to investigate."""
-        if not rooms:
+        if not available_moves:
             return None
 
-        # If a single room candidate remains in envelope, prioritize rooms we don't know
-        if len(self.kb.envelope_rooms) == 1:
-            envelope_room = next(iter(self.kb.envelope_rooms))
-            # If the envelope room is in our options, prioritize other rooms
-            if envelope_room in rooms and len(rooms) > 1:
-                other_rooms = [r for r in rooms if r != envelope_room]
-                return random.choice(other_rooms)
+        # If we need to exit room, prioritize hallway moves
+        if self.must_exit_next_turn:
+            hallway_moves = [m for m in available_moves
+                             if isinstance(m, tuple) and len(m) == 2]
+            if hallway_moves:
+                self.must_exit_next_turn = False
+                return random.choice(hallway_moves)
 
-        # Get the room with most information value
-        # Information value = how many suspects/weapons in envelope could be in this room
-        room_scores = {}
-        for room in rooms:
-            # Score is higher for rooms we've never suggested in
-            score = 10
-            if room in [r for (_, _, r) in self.previous_suggestions]:
-                score -= 5
+        # Separate room moves and hallway moves
+        room_moves = []
+        hallway_moves = []
 
-            # Adjust score based on how many times we've visited recently
-            occurrences = self.previous_rooms.count(room)
-            score -= occurrences * 2
+        for move in available_moves:
+            if isinstance(move, str) or (isinstance(move, tuple) and len(move) == 3):
+                room_moves.append(move)
+            else:
+                hallway_moves.append(move)
 
-            room_scores[room] = score
+        # Strategic priorities:
+        # 1. If we can deduce the solution, head to Clue room
+        solution_known = self.kb.is_solution_known()
+        if solution_known:
+            clue_room_move = next((m for m in available_moves if self._get_room_name(m) == "Clue"), None)
+            if clue_room_move:
+                print(f"{self.character_name} heads to the Clue room to make an accusation!")
+                return clue_room_move
 
-        # Choose room with highest score, breaking ties randomly
-        max_score = max(room_scores.values())
-        best_rooms = [r for r, s in room_scores.items() if s == max_score]
-        return random.choice(best_rooms)
+        # 2. Prioritize rooms we haven't visited or made suggestions in
+        if room_moves:
+            # Avoid rooms we've suggested in recently
+            unvisited_rooms = [m for m in room_moves
+                               if self._get_room_name(m) != self.last_suggestion_room]
 
-    def _update_previous_rooms(self, room):
-        """Update the list of previously visited rooms."""
-        self.previous_rooms.append(room)
-        if len(self.previous_rooms) > self.max_previous_rooms:
-            self.previous_rooms.pop(0)
+            # If we have unvisited rooms, prioritize those in envelope candidates
+            if unvisited_rooms:
+                envelope_candidates = self.kb.envelope_candidates()["rooms"]
+                candidate_room_moves = [m for m in unvisited_rooms
+                                        if self._get_room_name(m) in envelope_candidates]
 
-    def choose_suggestion(self, game, room):
+                if candidate_room_moves:
+                    return random.choice(candidate_room_moves)
+                return random.choice(unvisited_rooms)
+
+            # If all rooms have been visited, just choose any room
+            return random.choice(room_moves)
+
+        # 3. If no rooms available, move through hallways
+        # Avoid the last few positions if possible to prevent cycles
+        filtered_hallway_moves = [m for m in hallway_moves if m not in self.last_positions]
+        if filtered_hallway_moves:
+            chosen_move = random.choice(filtered_hallway_moves)
+        else:
+            chosen_move = random.choice(hallway_moves)
+
+        # Update position history - deque with maxlen handles this automatically
+        if isinstance(chosen_move, tuple) and len(chosen_move) == 2:
+            self.last_positions.append(chosen_move)
+
+        return chosen_move
+
+    def handle_suggestion(self, game, room, required=False):
         """
-        Choose a strategic suggestion based on knowledge.
+        Handle making a suggestion when in a room.
 
         Args:
             game: The Game instance
             room: The current room
+            required: Whether a suggestion is required (just entered the room)
 
         Returns:
-            tuple: (suspect, weapon) for the suggestion
+            tuple: (suspect, weapon, room) for the suggestion
         """
-        # Initialize knowledge base if needed
-        if self.kb is None:
-            self.initialize_knowledge_base(game)
+        # Check if player is eliminated
+        if self.eliminated:
+            return None
 
-        # Get envelope candidates
-        envelope = self.kb.envelope_candidates()
+        # Set flag to exit room next turn
+        self.must_exit_next_turn = True
+        self.last_suggestion_room = room
 
-        # If we haven't narrowed down a category yet, try to gather information
-        # about as many cards as possible
-        if len(envelope["suspects"]) > 1 and len(envelope["weapons"]) > 1:
-            # Look for novel combinations we haven't tried yet
-            novel_suggestions = []
-            for suspect in envelope["suspects"]:
-                for weapon in envelope["weapons"]:
-                    if (suspect, weapon, room) not in self.previous_suggestions:
-                        novel_suggestions.append((suspect, weapon))
+        # Choose which suspect and weapon to suggest
+        suggestion = self.choose_suggestion(game, room)
+        if suggestion is None:
+            return None
 
-            # If we have novel suggestions, use one of those
-            if novel_suggestions:
-                return random.choice(novel_suggestions)
+        suspect, weapon = suggestion
 
-        # If we've narrowed down suspects but not weapons, fix the suspect and vary weapons
-        elif len(envelope["suspects"]) == 1 and len(envelope["weapons"]) > 1:
-            suspect = next(iter(envelope["suspects"]))
-            for weapon in envelope["weapons"]:
-                if (suspect, weapon, room) not in self.previous_suggestions:
-                    return (suspect, weapon)
+        # Record this suggestion to avoid repeating
+        self.previous_suggestions.add((suspect, weapon, room))
 
-        # If we've narrowed down weapons but not suspects, fix the weapon and vary suspects
-        elif len(envelope["weapons"]) == 1 and len(envelope["suspects"]) > 1:
-            weapon = next(iter(envelope["weapons"]))
-            for suspect in envelope["suspects"]:
-                if (suspect, weapon, room) not in self.previous_suggestions:
-                    return (suspect, weapon)
+        print(f"{self.character_name} suggests: {suspect} in the {room} with the {weapon}")
+        return (room, suspect, weapon)  # Return in the expected order: room, suspect, weapon
 
-        # Fall back to parent implementation
-        return super().choose_suggestion(game, room)
-
-    def should_make_accusation(self, game):
+    def update_knowledge_from_suggestion(self, suggesting_player, suggestion, responding_player, revealed_card=None):
         """
-        Determine if we should make an accusation based on knowledge.
+        Update knowledge based on a suggestion and its response.
 
         Args:
-            game: The Game instance
-
-        Returns:
-            bool: True if we should try to make an accusation
+            suggesting_player (int): Player ID who made the suggestion
+            suggestion (tuple): (room, suspect, weapon)
+            responding_player (int): Player ID who responded (or None)
+            revealed_card (tuple, optional): Card that was revealed to suggesting_player
         """
-        # First check if solution is logically known from KB
-        kb_says_accuse = super().should_make_accusation(game)
-        if kb_says_accuse:
-            return True
+        # Check if player is eliminated
+        if self.eliminated:
+            return
 
-        # Check if we're in the Clue room
-        current_position = self.character.position
-        in_clue_room = False
+        # Make sure KB is initialized
+        if self.kb is None and hasattr(self, 'game'):
+            self.initialize_knowledge_base(self.game)
 
-        if isinstance(current_position, str) and current_position == "Clue":
-            in_clue_room = True
-        elif isinstance(current_position, tuple) and len(current_position) == 3 and current_position[0] == "Clue":
-            in_clue_room = True
+        # Forward to KB to update knowledge
+        if self.kb:
+            # If we were shown a card, we know exactly who has it
+            if revealed_card is not None:
+                card_type, card_name = revealed_card
+                self.kb.set_holder(card_name, responding_player)
 
-        if not in_clue_room:
-            return False
+            # No one could refute - all cards might be in envelope
+            elif responding_player is None:
+                room, suspect, weapon = suggestion
+                # Set these cards as possible envelope cards
+                self.kb.set_holder(room, "ENVELOPE")
+                self.kb.set_holder(suspect, "ENVELOPE")
+                self.kb.set_holder(weapon, "ENVELOPE")
 
-        # If we've narrowed down options significantly, consider making an accusation
-        envelope = self.kb.envelope_candidates()
-        total_possibilities = (
-                len(envelope["suspects"]) *
-                len(envelope["weapons"]) *
-                len(envelope["rooms"])
-        )
+            # Someone refuted but we don't know which card
+            else:
+                room, suspect, weapon = suggestion
+                cards_in_suggestion = {room, suspect, weapon}
 
-        # If very few possibilities remain or we've been stuck for a while
-        if total_possibilities <= 4 or self.no_progress_turns >= self.patience_threshold:
-            return True
+                # That player has at least one of these cards
+                self.kb.record_atleast_one(responding_player, cards_in_suggestion)
 
-        return False
+            # If we were observing another player's suggestion
+            if suggesting_player != self.player_id and responding_player is not None:
+                # Handle the player elimination by exclusion logic
+                # Any player who was skipped during suggestion response doesn't have any of the cards
+                room, suspect, weapon = suggestion
+
+                # Find all players between suggester and responder who were skipped
+                current_id = (suggesting_player + 1) % len(self.game.players)
+                while current_id != responding_player:
+                    # This player was skipped, so they don't have any of the suggestion cards
+                    self.kb.eliminate(room, current_id)
+                    self.kb.eliminate(suspect, current_id)
+                    self.kb.eliminate(weapon, current_id)
+                    current_id = (current_id + 1) % len(self.game.players)
 
     def handle_accusation(self, game):
         """
-        Handle making an accusation based on current knowledge.
+        Handle making an accusation.
 
         Args:
             game: The Game instance
 
         Returns:
-            bool: True if accusation was made, False otherwise
+            tuple: (room, suspect, weapon) for the accusation
         """
-        from Game.GameLogic import process_accusation
+        # Check if player is eliminated
+        if self.eliminated:
+            return None
 
-        # Check if we have a definite solution from KB
-        if super().handle_accusation(game):
-            return True
+        # Get the most likely solution
+        envelope = self.kb.envelope_candidates()
 
-        # If we should make a guess based on available information
-        if self.should_make_accusation(game):
-            envelope = self.kb.envelope_candidates()
-
-            # Pick the most likely solution
+        # If we have perfect knowledge, use it
+        if (len(envelope["suspects"]) == 1 and
+                len(envelope["weapons"]) == 1 and
+                len(envelope["rooms"]) == 1):
+            suspect = list(envelope["suspects"])[0]
+            weapon = list(envelope["weapons"])[0]
+            room = list(envelope["rooms"])[0]
+        else:
+            # Otherwise take our best guess
             suspect = random.choice(list(envelope["suspects"]))
             weapon = random.choice(list(envelope["weapons"]))
             room = random.choice(list(envelope["rooms"]))
 
-            print(f"{self.character_name} makes an educated guess: {suspect} in the {room} with the {weapon}")
+        print(f"{self.character_name} makes an accusation: {suspect} in the {room} with the {weapon}")
+        return (room, suspect, weapon)
 
-            # Submit the accusation
-            result = process_accusation(game, self, suspect, weapon, room)
+    def update_knowledge_from_failed_accusation(self, player_id, accusation):
+        """
+        Update knowledge when an accusation fails.
 
-            if result:
-                print(f"{self.character_name} was correct!")
-            else:
-                print(f"{self.character_name} was wrong and is eliminated.")
+        Args:
+            player_id (int): ID of player who made the failed accusation
+            accusation (tuple): (room, suspect, weapon) of the accusation
+        """
+        # Check if player is eliminated
+        if self.eliminated:
+            return
 
-            return True
-
-        return False
+        # At least one of the cards is not in the envelope
+        if self.kb:
+            room, suspect, weapon = accusation
+            cards = {suspect, weapon, room}
+            # Record that at least one of these cards is not in the envelope
+            self.kb.record_atleast_one_not_in_envelope(cards)

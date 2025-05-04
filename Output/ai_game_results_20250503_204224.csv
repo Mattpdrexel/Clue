@@ -1,0 +1,11 @@
+game,turns,duration,winner,all_eliminated,solution,eliminated_count
+1,100,0.06394505500793457,None,False,Professor Plum Wrench Dining Room,0
+2,100,0.044986724853515625,None,False,Miss Scarlet Knife Dining Room,0
+3,100,0.07595443725585938,None,False,Miss Scarlet Wrench Billiard Room,0
+4,100,0.057965993881225586,None,False,Miss Scarlet Knife Study,0
+5,100,0.04696154594421387,None,False,Mrs. White Rope Hall,0
+6,100,0.04497814178466797,None,False,Reverend Green Knife Library,0
+7,100,0.047987937927246094,None,False,Mrs Peacock Lead Pipe Dining Room,0
+8,100,0.04897117614746094,None,False,Miss Scarlet Revolver Kitchen,0
+9,100,0.036985158920288086,None,False,Miss Scarlet Lead Pipe Billiard Room,0
+10,100,0.03896474838256836,None,False,Reverend Green Revolver Ball Room,0

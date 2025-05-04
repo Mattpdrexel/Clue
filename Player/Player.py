@@ -28,6 +28,7 @@ class Player:
         self.character_name = character_name
         self.character = character_dict[character_name]
         self.hand = []  # Cards in the player's hand
+        self.made_wrong_accusation = False
         self.eliminated = False  # Track if player has been eliminated from making moves
 
         # Knowledge tracking
@@ -45,6 +46,12 @@ class Player:
 
         # Store suggestions history
         self.suggestion_history = []
+
+    def eliminate(self):
+        """Mark this player as eliminated from making moves."""
+        self.eliminated = True
+        self.made_wrong_accusation = True
+
 
     def add_card(self, card):
         """Add a card to the player's hand and update knowledge."""

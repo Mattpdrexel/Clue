@@ -93,6 +93,8 @@ def move_suggested_objects(game, suspect, weapon, room):
         print(f"The {weapon} was moved to the {room}")
 
 
+# Game/GameLogic.py (update)
+# Game/GameLogic.py
 def process_accusation(game, accusing_player, suspect, weapon, room):
     """
     Process an accusation made by a player.
@@ -118,5 +120,13 @@ def process_accusation(game, accusing_player, suspect, weapon, room):
         # Player made an incorrect accusation - they're out of the game
         # but should continue to respond to suggestions
         accusing_player.made_wrong_accusation = True
+        accusing_player.eliminated = True
+        print(f"{accusing_player.character_name} made a wrong accusation and is eliminated!")
+
+        # Check if all players have been eliminated
+        active_players = [p for p in game.players if not p.eliminated]
+        if not active_players:
+            print("All players have been eliminated. Game over!")
+            game.end_game()
 
     return is_correct

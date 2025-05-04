@@ -136,6 +136,7 @@ class Game:
             player_idx = i % len(self.players)
             self.players[player_idx].add_card(card)
 
+    # Game/Game.py (update)
     def play_game(self):
         """Main game loop."""
         print("\nStarting the game of Clue!")
@@ -155,6 +156,10 @@ class Game:
                 process_ai_turn(self, current_player)
             else:
                 process_turn(self, current_player)
+
+            # Check if the game has ended after this turn
+            if self.game_over:
+                break
 
             # Move to next player
             self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
