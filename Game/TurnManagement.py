@@ -125,7 +125,8 @@ def handle_room_actions(game, player, starting_room, new_room):
                 suspect, weapon, room = suggestion
 
             # Display the suggestion clearly for all players
-            print(f"\n🔍 SUGGESTION: {player.character_name} suggests {suspect} committed the murder in the {room} with the {weapon}")
+            print(
+                f"\n🔍 SUGGESTION: {player.character_name} suggests {suspect} committed the murder in the {room} with the {weapon}")
 
             # Process the suggestion
             process_suggestion(game, player, suspect, weapon, room)
@@ -136,7 +137,8 @@ def handle_room_actions(game, player, starting_room, new_room):
 
             if is_ai:
                 # For AI players, use their decision logic if available
-                should_suggest = hasattr(player, 'should_make_suggestion') and player.should_make_suggestion(game, new_room)
+                should_suggest = hasattr(player, 'should_make_suggestion') and player.should_make_suggestion(game,
+                                                                                                             new_room)
             else:
                 # For human players, ask if they want to make a suggestion
                 print(f"You are in the {new_room}. You may make a suggestion.")
@@ -152,7 +154,8 @@ def handle_room_actions(game, player, starting_room, new_room):
                     suspect, weapon, room = suggestion
 
                 # Display the suggestion clearly for all players
-                print(f"\n🔍 SUGGESTION: {player.character_name} suggests {suspect} committed the murder in the {room} with the {weapon}")
+                print(
+                    f"\n🔍 SUGGESTION: {player.character_name} suggests {suspect} committed the murder in the {room} with the {weapon}")
 
                 # Process the suggestion
                 process_suggestion(game, player, suspect, weapon, room)

@@ -241,7 +241,20 @@ class PlayerKnowledge:
         # Rule 2: If all but one card in a category is eliminated, the last one must be the solution
         self._check_last_remaining()
 
-        # Future rules could consider more complex logical deductions
+        # Rule 3: If a player doesn't have any cards from a suggestion, and another player showed a card,
+        # we can deduce which card was shown based on what we know about the first player's cards
+        self._deduce_shown_cards_from_skipped_players()
+
+        # Rule 4: If we know all but one card in a player's hand, we can deduce the last one
+        self._deduce_complete_hands()
+
+        # Rule 5: If a player has shown a card from a suggestion, and we know they don't have the other cards,
+        # we can deduce which card they showed
+        self._deduce_shown_cards_from_known_negatives()
+
+        # Rule 6: If we know the total number of cards each player has, and we know all but one card,
+        # we can deduce the last card
+        self._deduce_from_card_counts()
 
     def _check_last_remaining(self):
         """Check if only one card remains in any category"""
@@ -250,3 +263,91 @@ class PlayerKnowledge:
                 # This is the only possibility for this category
                 # We might want to log this or take other actions
                 pass
+
+    def _deduce_shown_cards_from_skipped_players(self):
+        """
+        If a player doesn't have any cards from a suggestion, and another player showed a card,
+        we can deduce which card was shown based on what we know about the first player's cards.
+        """
+        for event in self.events:
+            if event["type"] == self.EVENT_SUGGESTION and event["responding_player"] is not None:
+                # Get the suggestion details
+                suggesting_player = event["suggesting_player"]
+                room, suspect, weapon = event["suggestion"]
+                responding_player = event["responding_player"]
+
+                # Check players who were skipped (they don't have any of the cards)
+                current_id = (suggesting_player + 1) % len(self.game.players)
+                skipped_players = []
+
+                while current_id != responding_player:
+                    skipped_players.append(current_id)
+                    current_id = (current_id + 1) % len(self.game.players)
+
+                # If we know a skipped player doesn't have two of the cards, the responding player must have shown the third
+                for skipped_id in skipped_players:
+                    not_cards = self.player_not_cards[skipped_id]
+
+                    # Check if the skipped player doesn't have two of the three cards
+                    missing_count = sum(1 for card in [room, suspect, weapon] if card in not_cards)
+
+                    if missing_count == 2:
+                        # The responding player must have shown the third card
+                        shown_card = next(card for card in [room, suspect, weapon] if card not in not_cards)
+
+                        # Add this card to the responding player's known cards
+                        self.player_cards[responding_player].add(shown_card)
+
+                        # Remove from possible solution
+                        for category, items in self.categories.items():
+                            if shown_card in items:
+                                self.possible_solution[category].discard(shown_card)
+                                break
+
+    def _deduce_complete_hands(self):
+        """
+        If we know all but one card in a player's hand, and we know how many cards they have,
+        we can deduce the last one.
+        """
+        # This would require knowing the total number of cards each player has
+        # For now, we'll skip this implementation
+        pass
+
+    def _deduce_shown_cards_from_known_negatives(self):
+        """
+        If a player has shown a card from a suggestion, and we know they don't have the other cards,
+        we can deduce which card they showed.
+        """
+        for event in self.events:
+            if event["type"] == self.EVENT_SUGGESTION and event["responding_player"] is not None:
+                # Get the suggestion details
+                room, suspect, weapon = event["suggestion"]
+                responding_player = event["responding_player"]
+
+                # If we know the responding player doesn't have two of the cards, they must have shown the third
+                not_cards = self.player_not_cards[responding_player]
+
+                # Check if the responding player doesn't have two of the three cards
+                cards_not_held = [card for card in [room, suspect, weapon] if card in not_cards]
+
+                if len(cards_not_held) == 2:
+                    # The responding player must have shown the third card
+                    shown_card = next(card for card in [room, suspect, weapon] if card not in cards_not_held)
+
+                    # Add this card to the responding player's known cards
+                    self.player_cards[responding_player].add(shown_card)
+
+                    # Remove from possible solution
+                    for category, items in self.categories.items():
+                        if shown_card in items:
+                            self.possible_solution[category].discard(shown_card)
+                            break
+
+    def _deduce_from_card_counts(self):
+        """
+        If we know the total number of cards each player has, and we know all but one card,
+        we can deduce the last card.
+        """
+        # This would require knowing the total number of cards each player has
+        # For now, we'll skip this implementation
+        pass

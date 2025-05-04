@@ -49,26 +49,48 @@ class Player:
         Respond to a suggestion by showing a matching card if possible.
 
         Args:
-            suggestion: Tuple of (room, suspect, weapon)
+            suggestion: Tuple of (suspect, weapon, room)
 
         Returns:
             The card shown as a tuple (card_type, card_name) or None if no matching card
         """
-        room, suspect, weapon = suggestion
+        suspect, weapon, room = suggestion
         matching_cards = []
 
         # Check if player has any of the suggested cards
         for card_type, card_name in self.hand:
-            if (card_type == "room" and card_name == room) or \
-                    (card_type == "suspect" and card_name == suspect) or \
-                    (card_type == "weapon" and card_name == weapon):
+            if (card_type == "suspect" and card_name == suspect) or \
+                    (card_type == "weapon" and card_name == weapon) or \
+                    (card_type == "room" and card_name == room):
                 matching_cards.append((card_type, card_name))
 
         # If player has matching cards, show one
         if matching_cards:
-            # Basic implementation: just return the first matching card
-            # More sophisticated players might choose strategically
-            return matching_cards[0]
+            # For human players, let them choose which card to show
+            if not hasattr(self, 'is_ai') or not self.is_ai:
+                # Only offer choice if there's more than one matching card
+                if len(matching_cards) > 1:
+                    print(f"\nYou need to show one of your cards to disprove the suggestion:")
+                    for i, (card_type, card_name) in enumerate(matching_cards, 1):
+                        print(f"{i}. {card_name} ({card_type})")
+
+                    while True:
+                        try:
+                            choice = int(input("Which card would you like to show? "))
+                            if 1 <= choice <= len(matching_cards):
+                                return matching_cards[choice - 1]
+                            else:
+                                print("Invalid choice. Please try again.")
+                        except ValueError:
+                            print("Please enter a number.")
+                else:
+                    # Only one card to show
+                    print(f"\nYou will show your {matching_cards[0][0]} card: {matching_cards[0][1]}")
+                    return matching_cards[0]
+            else:
+                # AI players just return the first matching card
+                # More sophisticated AI might choose strategically
+                return matching_cards[0]
 
         return None
 

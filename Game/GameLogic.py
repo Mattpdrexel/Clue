@@ -19,6 +19,10 @@ def process_suggestion(game, suggesting_player, suspect, weapon, room):
     Returns:
         tuple: (responding_player, revealed_card)
     """
+    # Print the suggestion being made
+    print(
+        f"\n🔍 SUGGESTION: {suggesting_player.character_name} suggests {suspect} committed the murder in the {room} with the {weapon}")
+
     # Move the suggested character and weapon to the room
     move_suggested_objects(game, suspect, weapon, room)
 
@@ -27,56 +31,95 @@ def process_suggestion(game, suggesting_player, suspect, weapon, room):
     revealed_card = None
 
     # Start with the player to the left of the suggesting player
-    current_idx = (suggesting_player.player_id) % len(game.players)
+    start_idx = (suggesting_player.player_id + 1) % len(game.players)
+    current_idx = start_idx
 
-    for _ in range(len(game.players) - 1):  # Check all players except the suggesting player
-        current_idx = (current_idx + 1) % len(game.players)
+    print("\nChecking if any player can disprove the suggestion...")
+
+    while True:
         current_player = game.players[current_idx]
 
+        # Skip the suggesting player
         if current_player.player_id == suggesting_player.player_id:
-            continue  # Skip the suggesting player
+            current_idx = (current_idx + 1) % len(game.players)
+            # If we've checked all players and returned to the starter, break
+            if current_idx == start_idx:
+                break
+            continue
 
-        # Try to disprove
-        card = current_player.respond_to_suggestion((suspect, weapon, room))
+        # Skip eliminated players' turns but not their responses
+        if not current_player.eliminated or not current_player.made_wrong_accusation:
+            print(f"- Asking {current_player.character_name} to respond...")
 
-        if card:
-            responding_player = current_player
-            revealed_card = card
+            # Get response from the current player
+            card = current_player.respond_to_suggestion((suspect, weapon, room))
 
-            # Update suggesting player's knowledge with this card
-            suggesting_player.update_knowledge_from_suggestion(
-                suggesting_player=suggesting_player.player_id,
-                suggestion=(suspect, weapon, room),
-                responding_player=current_player.player_id,
-                revealed_card=card
-            )
+            if card:
+                card_type, card_name = card
+                responding_player = current_player
+                revealed_card = card
 
-            # Other players update their knowledge about this interaction
-            for observer in game.players:
-                if observer.player_id != suggesting_player.player_id and observer.player_id != current_player.player_id:
-                    observer.update_knowledge_from_suggestion(
+                print(f"- {current_player.character_name} shows a card to {suggesting_player.character_name}.")
+
+                # Only the suggesting player sees what card was shown
+                if not hasattr(suggesting_player, 'is_ai') or not suggesting_player.is_ai:
+                    print(f"\n{current_player.character_name} shows you: {card_name} ({card_type})")
+
+                # Update suggesting player's knowledge with this card
+                suggesting_player.update_knowledge_from_suggestion(
+                    suggesting_player=suggesting_player.player_id,
+                    suggestion=(suspect, weapon, room),
+                    responding_player=current_player.player_id,
+                    revealed_card=card
+                )
+
+                # Update responding player's knowledge about this interaction
+                if current_player.knowledge is not None:
+                    current_player.update_knowledge_from_suggestion(
                         suggesting_player=suggesting_player.player_id,
                         suggestion=(suspect, weapon, room),
                         responding_player=current_player.player_id,
-                        revealed_card=None  # Observers don't see the card
+                        revealed_card=None  # They know their own card
                     )
 
-            # Once one player disproves, we're done
+                # Update all other players' knowledge
+                for observer in game.players:
+                    if observer.player_id != suggesting_player.player_id and observer.player_id != current_player.player_id:
+                        if observer.knowledge is not None:
+                            observer.update_knowledge_from_suggestion(
+                                suggesting_player=suggesting_player.player_id,
+                                suggestion=(suspect, weapon, room),
+                                responding_player=current_player.player_id,
+                                revealed_card=None  # Other players don't see the card
+                            )
+
+                # Once a card is shown, we're done checking
+                break
+            else:
+                print(f"- {current_player.character_name} cannot disprove the suggestion.")
+
+        # Move to the next player
+        current_idx = (current_idx + 1) % len(game.players)
+
+        # If we've checked all players and returned to the starter, break
+        if current_idx == start_idx:
             break
 
-    # If no one could disprove, update all players' knowledge
+    # If no one could disprove, notify and update knowledge
     if not responding_player:
+        print("\n❗ No player could disprove the suggestion! These cards might be in the solution envelope.")
+
+        # Update all players' knowledge
         for observer in game.players:
-            if observer.player_id != suggesting_player.player_id:
+            if observer.knowledge is not None:
                 observer.update_knowledge_from_suggestion(
                     suggesting_player=suggesting_player.player_id,
                     suggestion=(suspect, weapon, room),
-                    responding_player=None,
-                    revealed_card=None
+                    responding_player=None,  # No one responded
+                    revealed_card=None  # No card shown
                 )
 
     return responding_player, revealed_card
-
 
 def move_suggested_objects(game, suspect, weapon, room):
     """Move the suggested character and weapon to the room."""
