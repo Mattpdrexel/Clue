@@ -1,0 +1,44 @@
+
+================================CLUE SCORESHEET=================================
+
+🔍 SOLUTION
+  PERSON:  Miss Scarlet, Mrs Peacock, Mrs. White, Reverend Green
+  WEAPON:  Candlestick, Lead Pipe, Rope
+  ROOM:    Ball Room, Conservatory, Dining Room
+
+
+PLAYERS:
+CARD                Miss ScarletProfessor PlumMrs Peacock 
+--------------------------------------------------------
+
+SUSPECTS:
+Colonel Mustard     ✗           ✓           ✗           
+Miss Scarlet        ✗           ✗           ✗           
+Mrs Peacock         ✗           ✗           ✗           
+Mrs. White          ✗           ✗           ✗           
+Professor Plum      ✗           ✓           ✗           
+Reverend Green      ✗           ✗           ✗           
+
+WEAPONS:
+Candlestick         ✗           ✗           ✗           
+Knife               ✓           ✗           ✗           
+Lead Pipe           ✗           ✗           ✗           
+Revolver            ✗           ✓           ✗           
+Rope                ✗           ✗           ✗           
+Wrench              ✗           ✗           ✓           
+
+ROOMS:
+Ball Room           ✗           ✗           ✗           
+Billiard Room       ✗           ✗           ✓           
+Conservatory        ✗           ✗           ✗           
+Dining Room         ✗           ✗           ✗           
+Hall                ✓           ✗           ✗           
+Kitchen             ✗           ✗           ✓           
+Library             ✗           ✓           ✗           
+Lounge              ✗           ✗           ✓           
+Study               ✗           ✓           ✗           
+
+LEGEND:
+  ✓ = Has card
+  ✗ = Doesn't have card
+  ? = Unknown
