@@ -1,4 +1,7 @@
+
 # Knowledge/PlayerKnowledge.py
+from Data.Constants import CHARACTERS, WEAPONS, SUSPECT_ROOMS
+
 
 class PlayerKnowledge:
     """
@@ -13,9 +16,9 @@ class PlayerKnowledge:
 
         # Define categories
         self.categories = {
-            "suspects": game.character_names.copy(),
-            "weapons": game.weapon_names.copy(),
-            "rooms": game.room_names.copy()
+            "suspects": CHARACTERS.copy(),
+            "weapons": WEAPONS.copy(),
+            "rooms": SUSPECT_ROOMS.copy()
         }
 
         # Raw knowledge events - storing the actual gameplay data
@@ -32,9 +35,9 @@ class PlayerKnowledge:
 
         # Cards that might be in the solution envelope
         self.possible_solution = {
-            "suspects": set(game.character_names),
-            "weapons": set(game.weapon_names),
-            "rooms": set(game.room_names)
+            "suspects": CHARACTERS.copy(),
+            "weapons": WEAPONS.copy(),
+            "rooms": SUSPECT_ROOMS.copy()
         }
 
         # Event types
@@ -108,7 +111,10 @@ class PlayerKnowledge:
         # Case 2: We made the suggestion and saw a card
         elif suggesting_player == self.player_id and revealed_card:
             card_type, card_name = revealed_card
-            # We now know who has this card
+            # Create player entry if doesn't exist
+            if responding_player not in self.player_cards:
+                self.player_cards[responding_player] = set()
+            # We now know who has this card 
             self.player_cards[responding_player].add(card_name)
             # Update possible solution - this card cannot be in the envelope
             self._remove_from_solution(card_type, card_name)
@@ -175,11 +181,14 @@ class PlayerKnowledge:
     def _remove_from_solution(self, card_type, card_name):
         """Remove a card from possible solution candidates"""
         if card_type == "suspect":
-            self.possible_solution["suspects"].discard(card_name)
+            if card_name in self.possible_solution["suspects"]:
+                self.possible_solution["suspects"].remove(card_name)
         elif card_type == "weapon":
-            self.possible_solution["weapons"].discard(card_name)
+            if card_name in self.possible_solution["weapons"]:
+                self.possible_solution["weapons"].remove(card_name)
         elif card_type == "room":
-            self.possible_solution["rooms"].discard(card_name)
+            if card_name in self.possible_solution["rooms"]:
+                self.possible_solution["rooms"].remove(card_name)
 
     def _mark_possible_solution(self, card_name):
         """Mark a card as a potential solution candidate"""
@@ -235,7 +244,8 @@ class PlayerKnowledge:
                 for category, items in self.categories.items():
                     if card in items:
                         # Remove from possible solution using the correct category key
-                        self.possible_solution[category].discard(card)
+                        if card in self.possible_solution[category]:
+                            self.possible_solution[category].remove(card)
                         break
 
         # Rule 2: If all but one card in a category is eliminated, the last one must be the solution
@@ -339,8 +349,8 @@ class PlayerKnowledge:
 
                     # Remove from possible solution
                     for category, items in self.categories.items():
-                        if shown_card in items:
-                            self.possible_solution[category].discard(shown_card)
+                        if shown_card in items and shown_card in self.possible_solution[category]:
+                            self.possible_solution[category].remove(shown_card)
                             break
 
     def _deduce_from_card_counts(self):

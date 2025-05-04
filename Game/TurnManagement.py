@@ -34,6 +34,7 @@ def process_turn(game, player):
     handle_accusation_option(game, player)
 
 
+
 def process_ai_turn(game, ai_player):
     """Process a turn for an AI player."""
     print(f"\n===== {ai_player.character_name}'s Turn (AI) =====")
@@ -65,6 +66,12 @@ def process_ai_turn(game, ai_player):
 
     # Handle AI accusation decision
     ai_player.handle_accusation(game)
+
+    # Print knowledge
+    # Interface.print_knowledge_sheet(player)
+    print()
+
+
 
 
 def get_room_from_position(mansion_board, position):

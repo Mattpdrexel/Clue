@@ -1,7 +1,6 @@
 import random
 from Game.GameSetup import initialize_game
 from Game.TurnManagement import process_turn, process_ai_turn
-from Game.GameLogic import process_suggestion, process_accusation
 
 
 class Game:
@@ -12,6 +11,7 @@ class Game:
     def __init__(self, num_human_players=1, num_ai_players=2):
         """Initialize the game."""
         # Initialize the boards, characters, and weapons
+        self.players = None
         self.mansion_board, self.character_board, self.characters, self.weapons = initialize_game()
 
         # Game state variables
@@ -67,6 +67,7 @@ class Game:
             self.players.append(player)
             player_id += 1
 
+
         # Create AI players (using standard AIPlayer)
         for _ in range(num_ai_players):
             available_characters = [name for name in self.characters.keys()
@@ -78,10 +79,12 @@ class Game:
             self.players.append(ai_player)
             player_id += 1
 
+
         print("\nPlayers in the game:")
         for player in self.players:
-            player_type = "Simple AI" if hasattr(player, 'is_ai') and player.is_ai else "Human"
-            print(f"{player.character_name} ({player_type})")
+            # Initialize knowledge for all players
+            print("\nInitializing player knowledge...")
+            player.initialize_knowledge(self)
 
     def setup_solution(self):
         """Set up the solution (secret envelope)."""

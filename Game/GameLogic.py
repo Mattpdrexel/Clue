@@ -1,3 +1,4 @@
+
 # Game/GameLogic.py
 """
 Module containing game logic for the Clue game.
@@ -68,8 +69,8 @@ def process_suggestion(game, suggesting_player, suspect, weapon, room):
                 # Update suggesting player's knowledge with this card
                 suggesting_player.update_knowledge_from_suggestion(
                     suggesting_player=suggesting_player.player_id,
-                    suggestion=(suspect, weapon, room),
-                    responding_player=current_player.player_id,
+                    suggestion=(room, suspect, weapon),
+                    responding_player=responding_player.player_id,
                     revealed_card=card
                 )
 
@@ -77,7 +78,7 @@ def process_suggestion(game, suggesting_player, suspect, weapon, room):
                 if current_player.knowledge is not None:
                     current_player.update_knowledge_from_suggestion(
                         suggesting_player=suggesting_player.player_id,
-                        suggestion=(suspect, weapon, room),
+                        suggestion=(room, suspect, weapon),
                         responding_player=current_player.player_id,
                         revealed_card=None  # They know their own card
                     )
@@ -88,7 +89,7 @@ def process_suggestion(game, suggesting_player, suspect, weapon, room):
                         if observer.knowledge is not None:
                             observer.update_knowledge_from_suggestion(
                                 suggesting_player=suggesting_player.player_id,
-                                suggestion=(suspect, weapon, room),
+                                suggestion=(room, suspect, weapon),
                                 responding_player=current_player.player_id,
                                 revealed_card=None  # Other players don't see the card
                             )
@@ -114,7 +115,7 @@ def process_suggestion(game, suggesting_player, suspect, weapon, room):
             if observer.knowledge is not None:
                 observer.update_knowledge_from_suggestion(
                     suggesting_player=suggesting_player.player_id,
-                    suggestion=(suspect, weapon, room),
+                    suggestion=(room, suspect, weapon),
                     responding_player=None,  # No one responded
                     revealed_card=None  # No card shown
                 )
@@ -136,8 +137,6 @@ def move_suggested_objects(game, suspect, weapon, room):
         print(f"The {weapon} was moved to the {room}")
 
 
-# Game/GameLogic.py (update)
-# Game/GameLogic.py
 def process_accusation(game, accusing_player, suspect, weapon, room):
     """
     Process an accusation made by a player.
@@ -155,6 +154,15 @@ def process_accusation(game, accusing_player, suspect, weapon, room):
     # Check if the accusation is correct
     solution = game.solution
     is_correct = solution[0] == suspect and solution[1] == weapon and solution[2] == room
+
+    # Update all players' knowledge about this accusation
+    for player in game.players:
+        if player.knowledge is not None:
+            player.update_knowledge_from_accusation(
+                accusing_player=accusing_player.player_id,
+                accusation=(room, suspect, weapon),
+                is_correct=is_correct
+            )
 
     if is_correct:
         # End the game with this player as the winner
