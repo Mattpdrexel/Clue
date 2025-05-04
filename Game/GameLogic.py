@@ -5,25 +5,22 @@ Module containing game logic for the Clue game.
 from Actions.Suggestions import check_accusation
 
 
-# Game/GameLogic.py
-def process_suggestion(game, suggesting_player, room, suspect, weapon):
+def process_suggestion(game, suggesting_player, suspect, weapon, room):
     """
     Process a suggestion made by a player.
 
     Args:
         game: Game instance
         suggesting_player: Player making the suggestion
-        room: Room where the suggestion is being made
         suspect: Suspected character
         weapon: Suspected weapon
+        room: Room where the suggestion is being made
 
     Returns:
         tuple: (responding_player, revealed_card)
     """
-    # Make the suggestion
-    suggestion = suggesting_player.make_suggestion(room, suspect, weapon)
-
-    # The character and weapon movement is now handled in Game.handle_suggestion
+    # Move the suggested character and weapon to the room
+    move_suggested_objects(game, suspect, weapon, room)
 
     # Find the first player that can disprove the suggestion
     responding_player = None
@@ -40,7 +37,7 @@ def process_suggestion(game, suggesting_player, room, suspect, weapon):
             continue  # Skip the suggesting player
 
         # Try to disprove
-        card = current_player.respond_to_suggestion(suggestion)
+        card = current_player.respond_to_suggestion((suspect, weapon, room))
 
         if card:
             responding_player = current_player
@@ -49,7 +46,7 @@ def process_suggestion(game, suggesting_player, room, suspect, weapon):
             # Update suggesting player's knowledge with this card
             suggesting_player.update_knowledge_from_suggestion(
                 suggesting_player=suggesting_player.player_id,
-                suggestion=suggestion,
+                suggestion=(suspect, weapon, room),
                 responding_player=current_player.player_id,
                 revealed_card=card
             )
@@ -59,7 +56,7 @@ def process_suggestion(game, suggesting_player, room, suspect, weapon):
                 if observer.player_id != suggesting_player.player_id and observer.player_id != current_player.player_id:
                     observer.update_knowledge_from_suggestion(
                         suggesting_player=suggesting_player.player_id,
-                        suggestion=suggestion,
+                        suggestion=(suspect, weapon, room),
                         responding_player=current_player.player_id,
                         revealed_card=None  # Observers don't see the card
                     )
@@ -73,31 +70,46 @@ def process_suggestion(game, suggesting_player, room, suspect, weapon):
             if observer.player_id != suggesting_player.player_id:
                 observer.update_knowledge_from_suggestion(
                     suggesting_player=suggesting_player.player_id,
-                    suggestion=suggestion,
+                    suggestion=(suspect, weapon, room),
                     responding_player=None,
                     revealed_card=None
                 )
 
     return responding_player, revealed_card
 
-def process_accusation(game, accusing_player, room, suspect, weapon):
+
+def move_suggested_objects(game, suspect, weapon, room):
+    """Move the suggested character and weapon to the room."""
+    # Move the suspected character if they exist
+    if suspect in game.characters:
+        suspect_char = game.characters[suspect]
+        suspect_char.move_to(room)
+        print(f"{suspect} was moved to the {room}")
+
+    # Move the suspected weapon if it exists
+    if weapon in game.weapons:
+        weapon_obj = game.weapons[weapon]
+        weapon_obj.move_to(room)
+        print(f"The {weapon} was moved to the {room}")
+
+
+def process_accusation(game, accusing_player, suspect, weapon, room):
     """
     Process an accusation made by a player.
 
     Args:
         game: The game instance
         accusing_player: Player making the accusation
-        room (str): The room where the crime took place
         suspect (str): The suspected character
         weapon (str): The suspected weapon
+        room (str): The room where the crime took place
 
     Returns:
         bool: True if the accusation is correct, False otherwise
     """
-    accusation = accusing_player.make_accusation(room, suspect, weapon)
-
     # Check if the accusation is correct
-    is_correct = check_accusation(accusation, game.solution)
+    solution = game.solution
+    is_correct = solution[0] == suspect and solution[1] == weapon and solution[2] == room
 
     if is_correct:
         # End the game with this player as the winner
