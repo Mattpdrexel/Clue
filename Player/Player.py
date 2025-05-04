@@ -163,9 +163,9 @@ class Player:
 
         # Use the movement module to calculate available moves
         return get_available_moves(
+            current_position,
             mansion_board,
             character_board,
-            current_position,
             dice_roll
         )
 
