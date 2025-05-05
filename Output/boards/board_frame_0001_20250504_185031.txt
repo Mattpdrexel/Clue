@@ -1,0 +1,19 @@
+===== CLUE GAME STATE - FRAME 1 =====
+
+Character Positions:
+- Colonel Mustard: ('Clue', 8, 11)
+- Miss Scarlet: ('Clue', 8, 10)
+- Mrs Peacock: ('Clue', 9, 10)
+- Mrs. White: ('Clue', 8, 12)
+- Professor Plum: ('Clue', 9, 11)
+- Reverend Green: ('Clue', 8, 13)
+
+Weapon Locations:
+- Candlestick: Clue
+- Knife: Clue
+- Lead Pipe: Clue
+- Revolver: Clue
+- Rope: Clue
+- Wrench: Clue
+
+Current Player: Reverend Green

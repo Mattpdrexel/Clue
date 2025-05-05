@@ -2,13 +2,13 @@
 ================================CLUE SCORESHEET=================================
 
 🔍 SOLUTION
-  PERSON:  Colonel Mustard, Miss Scarlet, Mrs. White, Reverend Green
-  WEAPON:  Knife, Rope, Wrench
-  ROOM:    Kitchen
+  PERSON:  Colonel Mustard, Miss Scarlet, Mrs. White, Professor Plum, Reverend Green
+  WEAPON:  Candlestick, Knife, Lead Pipe, Revolver, Rope, Wrench
+  ROOM:    Ball Room, Dining Room, Kitchen, Library, Lounge, Study
 
 
 PLAYERS:
-CARD                Mrs Peacock Miss ScarletMrs. White  
+CARD                Mrs Peacock Mrs. White  Colonel Mustard
 --------------------------------------------------------
 
 SUSPECTS:
@@ -16,27 +16,27 @@ Colonel Mustard     ✗           ✗           ✗
 Miss Scarlet        ✗           ✗           ✗           
 Mrs Peacock         ✗           ✓           ✗           
 Mrs. White          ✗           ✗           ✗           
-Professor Plum      ✗           ✓           ✗           
+Professor Plum      ✗           ✗           ✗           
 Reverend Green      ✗           ✗           ✗           
 
 WEAPONS:
-Candlestick         ✓           ✗           ✗           
+Candlestick         ✗           ✗           ✗           
 Knife               ✗           ✗           ✗           
-Lead Pipe           ✓           ✗           ✗           
-Revolver            ✓           ✗           ✗           
+Lead Pipe           ✗           ✗           ✗           
+Revolver            ✗           ✗           ✗           
 Rope                ✗           ✗           ✗           
 Wrench              ✗           ✗           ✗           
 
 ROOMS:
-Ball Room           ✓           ✗           ✗           
-Billiard Room       ✓           ✗           ✗           
-Conservatory        ✗           ✗           ✓           
-Dining Room         ✗           ✗           ✓           
-Hall                ✗           ✓           ✗           
+Ball Room           ✗           ✗           ✗           
+Billiard Room       ✗           ✗           ✓           
+Conservatory        ✗           ✓           ✗           
+Dining Room         ✗           ✗           ✗           
+Hall                ✗           ✗           ✓           
 Kitchen             ✗           ✗           ✗           
-Library             ✗           ✓           ✗           
-Lounge              ✓           ✗           ✗           
-Study               ✗           ✗           ✓           
+Library             ✗           ✗           ✗           
+Lounge              ✗           ✗           ✗           
+Study               ✗           ✗           ✗           
 
 LEGEND:
   ✓ = Has card

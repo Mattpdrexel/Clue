@@ -59,7 +59,14 @@ def play_game_auto(game):
 
     # Import necessary modules
     from Knowledge.ScoreSheet import ScoreSheet
+    from Visualization.BoardRenderer import BoardRenderer  # Add this import
     import os
+
+    # Initialize the board renderer
+    board_renderer = BoardRenderer(game)
+
+    # Render the initial board state
+    board_renderer.save_board_frame()  # Optional: save the initial frame
 
     # Set a reasonable limit to prevent infinite games
     max_turns = 400
@@ -120,6 +127,9 @@ def play_game_auto(game):
         from Game.TurnManagement import process_ai_turn
         process_ai_turn(game, current_player)
 
+        # Save frame every turn - if desired
+        # board_renderer.save_board_frame()
+
         # Move to next player
         game.current_player_idx = (game.current_player_idx + 1) % len(game.players)
 
@@ -139,6 +149,8 @@ def play_game_auto(game):
         print(f"\nGame over! {game.winner.character_name} wins!")
     else:
         print("\nGame over! No one was able to solve the mystery.")
+    # Save final
+    board_renderer.save_board_frame()
 
     # Print game statistics
     print(f"\nGame completed in {current_round} rounds ({current_turn} total turns)")
@@ -160,6 +172,10 @@ def play_game_auto(game):
 
     print(scoresheet.render_text())
     scoresheet.save_to_file("Output/scoresheet_final.txt")
+
+    # At the end of the game, create an animation
+    board_renderer.create_game_animation()
+
 
 if __name__ == "__main__":
     main()

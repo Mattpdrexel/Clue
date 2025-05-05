@@ -1,0 +1,241 @@
+======================================================
+           CLUE AI GAME STATISTICS REPORT             
+======================================================
+
+Number of games analyzed: 20
+AI players per game: 3
+
+WINNER STATISTICS:
+- Games with a winner: 17/20 (85.0%)
+- Games with no winner: 3/20 (15.0%)
+
+Winner distribution:
+  Professor Plum: 4 wins (23.5% of games with winners)
+  Colonel Mustard: 4 wins (23.5% of games with winners)
+  Mrs. White: 3 wins (17.6% of games with winners)
+  Reverend Green: 2 wins (11.8% of games with winners)
+  Mrs Peacock: 4 wins (23.5% of games with winners)
+
+ROUNDS STATISTICS:
+- Average rounds to completion: 98.35 ± 131.11
+- 95% Confidence Interval: 98.35 ± 57.46 (40.89 to 155.81)
+- Median rounds: 30.5
+- Min rounds: 21
+- Max rounds: 400
+
+GAME DURATION STATISTICS:
+- Average game duration: 5.27 seconds
+- Standard deviation: 5.84 seconds
+
+PLAYER ELIMINATION STATISTICS:
+- Average eliminations per game: 0.30
+- Elimination distribution:
+  0 eliminations: 16 games (80.0%)
+  1 eliminations: 2 games (10.0%)
+  2 eliminations: 2 games (10.0%)
+
+DETAILED GAME RESULTS:
+Game 1:
+  - Rounds: 24
+  - Winner: Professor Plum
+  - Eliminated players: 0/3
+  - Duration: 1.74 seconds
+  - Player statuses:
+    * Miss Scarlet: Active
+    * Professor Plum: Winner
+    * Mrs Peacock: Active
+
+Game 2:
+  - Rounds: 400
+  - Winner: None
+  - Eliminated players: 1/3
+  - Duration: 18.80 seconds
+  - Player statuses:
+    * Professor Plum: Eliminated
+    * Mrs Peacock: Active
+    * Reverend Green: Active
+
+Game 3:
+  - Rounds: 37
+  - Winner: Colonel Mustard
+  - Eliminated players: 0/3
+  - Duration: 2.53 seconds
+  - Player statuses:
+    * Miss Scarlet: Active
+    * Colonel Mustard: Winner
+    * Professor Plum: Active
+
+Game 4:
+  - Rounds: 29
+  - Winner: Mrs. White
+  - Eliminated players: 0/3
+  - Duration: 1.58 seconds
+  - Player statuses:
+    * Mrs. White: Winner
+    * Mrs Peacock: Active
+    * Miss Scarlet: Active
+
+Game 5:
+  - Rounds: 23
+  - Winner: Professor Plum
+  - Eliminated players: 0/3
+  - Duration: 1.39 seconds
+  - Player statuses:
+    * Reverend Green: Active
+    * Professor Plum: Winner
+    * Mrs. White: Active
+
+Game 6:
+  - Rounds: 32
+  - Winner: Professor Plum
+  - Eliminated players: 0/3
+  - Duration: 1.80 seconds
+  - Player statuses:
+    * Colonel Mustard: Active
+    * Professor Plum: Winner
+    * Mrs Peacock: Active
+
+Game 7:
+  - Rounds: 26
+  - Winner: Colonel Mustard
+  - Eliminated players: 0/3
+  - Duration: 1.51 seconds
+  - Player statuses:
+    * Colonel Mustard: Winner
+    * Mrs. White: Active
+    * Mrs Peacock: Active
+
+Game 8:
+  - Rounds: 21
+  - Winner: Colonel Mustard
+  - Eliminated players: 0/3
+  - Duration: 1.95 seconds
+  - Player statuses:
+    * Colonel Mustard: Winner
+    * Professor Plum: Active
+    * Mrs Peacock: Active
+
+Game 9:
+  - Rounds: 127
+  - Winner: Mrs. White
+  - Eliminated players: 0/3
+  - Duration: 8.19 seconds
+  - Player statuses:
+    * Mrs. White: Winner
+    * Reverend Green: Active
+    * Colonel Mustard: Active
+
+Game 10:
+  - Rounds: 56
+  - Winner: Reverend Green
+  - Eliminated players: 0/3
+  - Duration: 3.60 seconds
+  - Player statuses:
+    * Reverend Green: Winner
+    * Mrs Peacock: Active
+    * Colonel Mustard: Active
+
+Game 11:
+  - Rounds: 29
+  - Winner: Mrs Peacock
+  - Eliminated players: 0/3
+  - Duration: 1.83 seconds
+  - Player statuses:
+    * Mrs Peacock: Winner
+    * Reverend Green: Active
+    * Colonel Mustard: Active
+
+Game 12:
+  - Rounds: 65
+  - Winner: Professor Plum
+  - Eliminated players: 2/3
+  - Duration: 5.15 seconds
+  - Player statuses:
+    * Professor Plum: Winner
+    * Mrs. White: Eliminated
+    * Reverend Green: Eliminated
+
+Game 13:
+  - Rounds: 38
+  - Winner: Colonel Mustard
+  - Eliminated players: 0/3
+  - Duration: 2.91 seconds
+  - Player statuses:
+    * Colonel Mustard: Winner
+    * Mrs. White: Active
+    * Professor Plum: Active
+
+Game 14:
+  - Rounds: 23
+  - Winner: Mrs Peacock
+  - Eliminated players: 0/3
+  - Duration: 1.57 seconds
+  - Player statuses:
+    * Mrs Peacock: Winner
+    * Professor Plum: Active
+    * Miss Scarlet: Active
+
+Game 15:
+  - Rounds: 29
+  - Winner: Mrs. White
+  - Eliminated players: 0/3
+  - Duration: 1.89 seconds
+  - Player statuses:
+    * Reverend Green: Active
+    * Mrs. White: Winner
+    * Professor Plum: Active
+
+Game 16:
+  - Rounds: 400
+  - Winner: None
+  - Eliminated players: 1/3
+  - Duration: 20.89 seconds
+  - Player statuses:
+    * Reverend Green: Active
+    * Professor Plum: Eliminated
+    * Colonel Mustard: Active
+
+Game 17:
+  - Rounds: 27
+  - Winner: Mrs Peacock
+  - Eliminated players: 0/3
+  - Duration: 2.00 seconds
+  - Player statuses:
+    * Mrs Peacock: Winner
+    * Colonel Mustard: Active
+    * Reverend Green: Active
+
+Game 18:
+  - Rounds: 152
+  - Winner: Reverend Green
+  - Eliminated players: 0/3
+  - Duration: 11.32 seconds
+  - Player statuses:
+    * Miss Scarlet: Active
+    * Professor Plum: Active
+    * Reverend Green: Winner
+
+Game 19:
+  - Rounds: 29
+  - Winner: Mrs Peacock
+  - Eliminated players: 0/3
+  - Duration: 1.99 seconds
+  - Player statuses:
+    * Mrs. White: Active
+    * Miss Scarlet: Active
+    * Mrs Peacock: Winner
+
+Game 20:
+  - Rounds: 400
+  - Winner: None
+  - Eliminated players: 2/3
+  - Duration: 12.84 seconds
+  - Player statuses:
+    * Professor Plum: Eliminated
+    * Mrs. White: Active
+    * Reverend Green: Eliminated
+
+
+======================================================
+                    END OF REPORT                     
+======================================================

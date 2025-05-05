@@ -2,19 +2,19 @@
 ================================CLUE SCORESHEET=================================
 
 🔍 SOLUTION
-  PERSON:  Colonel Mustard, Miss Scarlet, Mrs Peacock, Mrs. White, Professor Plum, Reverend Green
+  PERSON:  Colonel Mustard, Miss Scarlet, Mrs. White, Professor Plum, Reverend Green
   WEAPON:  Candlestick, Knife, Lead Pipe, Revolver, Rope, Wrench
-  ROOM:    Ball Room, Billiard Room, Dining Room, Hall, Kitchen, Library, Lounge, Study
+  ROOM:    Ball Room, Dining Room, Kitchen, Library, Lounge, Study
 
 
 PLAYERS:
-CARD                Mrs Peacock Miss ScarletMrs. White  
+CARD                Mrs Peacock Mrs. White  Colonel Mustard
 --------------------------------------------------------
 
 SUSPECTS:
 Colonel Mustard     ✗           ✗           ✗           
 Miss Scarlet        ✗           ✗           ✗           
-Mrs Peacock         ✗           ✗           ✗           
+Mrs Peacock         ✗           ✓           ✗           
 Mrs. White          ✗           ✗           ✗           
 Professor Plum      ✗           ✗           ✗           
 Reverend Green      ✗           ✗           ✗           
@@ -29,10 +29,10 @@ Wrench              ✗           ✗           ✗
 
 ROOMS:
 Ball Room           ✗           ✗           ✗           
-Billiard Room       ✗           ✗           ✗           
-Conservatory        ✗           ✗           ✓           
+Billiard Room       ✗           ✗           ✓           
+Conservatory        ✗           ✓           ✗           
 Dining Room         ✗           ✗           ✗           
-Hall                ✗           ✗           ✗           
+Hall                ✗           ✗           ✓           
 Kitchen             ✗           ✗           ✗           
 Library             ✗           ✗           ✗           
 Lounge              ✗           ✗           ✗           

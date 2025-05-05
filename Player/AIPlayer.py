@@ -407,6 +407,9 @@ class AIPlayer(Player):
             suggesting_player, suggestion, responding_player, revealed_card
         )
 
+        # Apply enhanced deductions
+        self.enhance_deductions()
+
         # If this was our suggestion, record the result
         if suggesting_player == self.player_id:
             room, suspect, weapon = suggestion
@@ -696,12 +699,91 @@ class AIPlayer(Player):
 
         # Early game: Only accuse if we're very confident
         if self._turn_counter < turn_threshold:
-            return confidence_score <= 4  # e.g., 2 suspects, 1 weapon, 1 room
+            return confidence_score <= 2  # e.g., 2 suspects, 1 weapon, 1 room
 
         # Mid game: Accuse if we're reasonably confident
         elif self._turn_counter < 2 * turn_threshold:
-            return confidence_score <= 6  # e.g., 2 suspects, 2 weapons, 2 rooms
+            return confidence_score <= 3  # e.g., 2 suspects, 2 weapons, 2 rooms
 
         # Late game: Take more risks
         else:
-            return confidence_score <= 9  # e.g., 3 suspects, 3 weapons, 3 rooms
+            return confidence_score <= 4  # e.g., 3 suspects, 3 weapons, 3 rooms
+
+    def enhance_deductions(self):
+        """
+        Apply enhanced deduction strategies beyond what's in the base PlayerKnowledge.
+        This method analyzes suggestion responses to eliminate cards from the solution space.
+        """
+        if not self.knowledge:
+            return
+
+        # First ensure base deductions are applied
+        self.knowledge.apply_deductions()
+
+        # Enhanced deduction 1: Analyze suggestion responses for logical implications
+        for event in self.knowledge.events:
+            if event["type"] == self.knowledge.EVENT_SUGGESTION:
+                room, suspect, weapon = event["suggestion"]
+                responding_player = event["responding_player"]
+
+                # If a player showed a card in response to our suggestion
+                if responding_player is not None and event.get("suggesting_player") == self.player_id:
+                    # If we know some of the cards this player doesn't have, we can make deductions
+                    not_cards = self.knowledge.player_not_cards.get(responding_player, set())
+
+                    # If player doesn't have two of the suggested cards, they must have shown the third
+                    matching_cards = [card for card in [suspect, weapon, room] if card not in not_cards]
+                    if len(matching_cards) == 1:
+                        # We can deduce which card was shown
+                        shown_card = matching_cards[0]
+
+                        # Identify card type
+                        card_type = None
+                        if shown_card == suspect:
+                            card_type = "suspect"
+                        elif shown_card == weapon:
+                            card_type = "weapon"
+                        elif shown_card == room:
+                            card_type = "room"
+
+                        # Add to our knowledge
+                        if card_type:
+                            self.knowledge.player_cards.setdefault(responding_player, set()).add(shown_card)
+                            # Remove from solution space
+                            if shown_card in self.knowledge.possible_solution[card_type + "s"]:
+                                self.knowledge.possible_solution[card_type + "s"].remove(shown_card)
+                            # Add to eliminated cards
+                            if card_type == "suspect":
+                                self.eliminated_suspects.add(shown_card)
+                            elif card_type == "weapon":
+                                self.eliminated_weapons.add(shown_card)
+                            elif card_type == "room":
+                                self.eliminated_rooms.add(shown_card)
+
+        # Enhanced deduction 2: Cross-reference with what we know about other players
+        for player_id, cards in self.knowledge.player_cards.items():
+            for card in cards:
+                # Find card type
+                card_type = None
+                if card in self.knowledge.categories["suspects"]:
+                    card_type = "suspects"
+                elif card in self.knowledge.categories["weapons"]:
+                    card_type = "weapons"
+                elif card in self.knowledge.categories["rooms"]:
+                    card_type = "rooms"
+
+                if card_type:
+                    # Remove from solution possibilities
+                    if card in self.knowledge.possible_solution[card_type]:
+                        self.knowledge.possible_solution[card_type].remove(card)
+
+                    # Add to eliminated cards sets
+                    if card_type == "suspects":
+                        self.eliminated_suspects.add(card)
+                    elif card_type == "weapons":
+                        self.eliminated_weapons.add(card)
+                    elif card_type == "rooms":
+                        self.eliminated_rooms.add(card)
+
+        # Apply base deductions one more time
+        self.knowledge.apply_deductions()

@@ -1,0 +1,20 @@
+===== CLUE GAME STATE - FRAME 2 =====
+
+Character Positions:
+- Colonel Mustard: Hall
+- Miss Scarlet: Clue
+- Mrs Peacock: Hall
+- Mrs. White: Ball Room
+- Professor Plum: (4, 8)
+- Reverend Green: Conservatory
+
+Weapon Locations:
+- Candlestick: Lounge
+- Knife: Hall
+- Lead Pipe: Dining Room
+- Revolver: Hall
+- Rope: Conservatory
+- Wrench: Dining Room
+
+Current Player: Colonel Mustard
+Current Round: 47
